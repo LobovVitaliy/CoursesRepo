@@ -6,13 +6,15 @@
 double long2double(long long);
 
 int main() {
+
 long long number;
 double V;
 
 scanf("%lld", &number);
-
 V = long2double(number);
-return V;
+printf ("%.325llf",V);
+
+return 0;
 }
 */
 
@@ -30,29 +32,29 @@ for (i=51;i>=0;--i) {
     F+=((number>>i)&1)*(pow(2,(i-52)));
 }
 if (E==2047 && F!=0)
-    printf("V=NAN");
+    return NAN;
 else
 if (E==2047 && F==0 && S==1)
-    printf("V=-Infinity");
+    return -INFINITY;
 else
 if (E==2047 && F==0 && S==0)
-    printf("V=Infinity");
+    return INFINITY;
 else
 if (E>0 && E<2047) {
     V=pow(-1,S)*pow(2,E-1023)*(1+F);
-    printf("%.325llf", V);
+    return V;
 }
 else
 if (E==0 && F!=0) {
     V=pow(-1,S)*pow(2,-1022)*F;
-    printf("%.325llf", V);
+    return V;
 }
 else
 if (E==0 && F==0 && S==1) {
-    printf("V=-0");
+    return -0.0;
 }
 else
 if (E==0 && F==0 && S==0){
-    printf("V=0");
+    return 0;
 }
 }
