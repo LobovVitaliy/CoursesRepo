@@ -2,8 +2,6 @@
 
 void fillRand(int mat[4][4]) {
 int i,j;
-time_t t;
-srand((unsigned)time(&t));
 
 for (i=0;i<4;i++) {
     for (j=0;j<4;j++) {
