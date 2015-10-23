@@ -1,3 +1,5 @@
+#include <time.h>
+
 void fillRand(int mat[4][4]) {
 int i,j;
 time_t t;
