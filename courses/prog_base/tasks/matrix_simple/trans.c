@@ -67,26 +67,22 @@ for (i=3;i>=0;i--) {
 
 void transposSide(int mat[4][4]) {
 int i,j;
-int c,d;
 int mas[4][4];
 
-d=0;
-for (i=3;i>=0;i--) {
-    c=i-3-d;
+for (i=0;i<4;i++) {
     for (j=0;j<4;j++) {
-    mas[i][j]=mat[c][j];
+        mas[i][j]=mat[i][j];
     }
-    d-=2;
 }
 
-int a,b;
-
-for (i=0;i<4;i++) {
-         a=3-i;
-    for (j=0;j<4;j++) {
-            b=3-j;
-        mat[i][j]=mas[b][a];
+int a,k;
+k=0;
+for (i=3;i>=0;i--) {
+    a=i-3-k;
+    for (j=3;j>=0;j--) {
+    mat[i][j]=mas[j][a];
     }
+    k-=2;
 }
 }
 
