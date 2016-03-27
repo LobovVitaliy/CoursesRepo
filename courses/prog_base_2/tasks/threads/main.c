@@ -7,30 +7,34 @@
 #include "Writer.h"
 #include "Reader.h"
 
-struct symbol_s {
-    char symbol;
-} x;
-
-typedef struct symbol_s symbol_t;
-
-HANDLE hMutex;
-
 int main(void) {
 
-    x.symbol = 'a';
-    symbol_t * symbol = &x;
+    symbol_t data;
 
-    hMutex = CreateMutex(NULL, FALSE, NULL);
+    data.symbol = 'a';
+    data.mutex = CreateMutex(NULL, FALSE, NULL);
+    data.string = "Lobov,Vitaliy;Writes.Programme!";
 
-    Writer_t * w = Writer_new(hMutex, symbol->symbol, "Lobov,Vitaliy;Writes.Programme!");
-    Reader_t * r = Reader_new(hMutex, symbol->symbol);
+    symbol_t * symbol = &data;
 
-    WaitForSingleObject(w, INFINITE);
+    Writer_t * w1 = Writer_new(symbol);
+    Writer_t * w2 = Writer_new(symbol);
 
-    Writer_free(w);
-    Reader_free(r);
+    Reader_t * r1 = Reader_new(symbol);
+    Reader_t * r2 = Reader_new(symbol);
+    Reader_t * r3 = Reader_new(symbol);
 
-    CloseHandle(hMutex);
+    WaitForSingleObject(w1, INFINITE);
+    ReleaseMutex(w1);
+
+    Writer_free(w1);
+    Writer_free(w2);
+
+    Reader_free(r1);
+    Reader_free(r2);
+    Reader_free(r3);
+
+    CloseHandle(data.mutex);
 
     return 0;
 }

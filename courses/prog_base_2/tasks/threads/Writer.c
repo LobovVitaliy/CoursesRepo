@@ -6,16 +6,9 @@
 
 #include "Writer.h"
 
-struct str {
-    char * string;
-} s;
+Writer_t * Writer_new(symbol_t * symbol) {
 
-HANDLE hMutexW;
-
-Writer_t * Writer_new(HANDLE hMutex, char * symbol, char * string) {
-    s.string = string;
     LPVOID ctx = symbol;
-    hMutexW = hMutex;
 
     return CreateThread(
         NULL,
@@ -32,14 +25,15 @@ void Writer_free(Writer_t * self) {
 
 DWORD writerFunc(LPVOID args) {
 
-    char * symbol = (char *) args;
-    int size = strlen(s.string);
+    symbol_t * point = (symbol_t *) args;
+
+    int size = strlen(point->string);
     int i = 0;
 
     for(i = size - 1; i >= 0; i--) {
-        WaitForSingleObject(hMutexW, INFINITE);
-            symbol = s.string[i];
+        WaitForSingleObject(point->mutex, INFINITE);
+            point->symbol = point->string[i];
             Sleep(100);
-        ReleaseMutex(hMutexW);
+        ReleaseMutex(point->mutex);
     }
 }

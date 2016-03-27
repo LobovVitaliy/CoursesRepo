@@ -1,12 +1,17 @@
 #ifndef WRITER_H_INCLUDED
 #define WRITER_H_INCLUDED
 
-#include <windows.h>
+struct symbol_s {
+    char symbol;
+    HANDLE mutex;
+    char * string;
+};
 
-typedef HANDLE Writer_t;
 typedef struct symbol_s symbol_t;
 
-Writer_t * Writer_new(HANDLE hMutex, char * symbol, char * string);
+typedef HANDLE Writer_t;
+
+Writer_t * Writer_new(symbol_t * symbol);
 void Writer_free(Writer_t * self);
 DWORD writerFunc(LPVOID args);
 

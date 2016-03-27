@@ -6,11 +6,9 @@
 
 #include "Reader.h"
 
-HANDLE hMutexR;
+Reader_t * Reader_new(symbol_t * symbol) {
 
-Reader_t * Reader_new(HANDLE hMutex, char * symbol) {
     LPVOID ctx = symbol;
-    hMutexR = hMutex;
 
     return CreateThread(
         NULL,
@@ -27,21 +25,21 @@ void Reader_free(Reader_t * self) {
 
 DWORD readerFunc(LPVOID args) {
 
-    char * symbol = (char *) args;
+    symbol_t * point = (symbol_t *) args;
     char str[] = {"!%^&*()–+={}|~[]\;':<>?,./#"};
     int i = 0;
 
     while (1) {
 
-        WaitForSingleObject(hMutexR, INFINITE);
+        WaitForSingleObject(point->mutex, INFINITE);
 
         for(i = 0; i < strlen(str); i++) {
-            if(symbol == str[i]) {
-                printf("%c ", symbol);
+            if(point->symbol == str[i]) {
+                printf("%c ", point->symbol);
                 break;
             }
         }
 
-        ReleaseMutex(hMutexR);
+        ReleaseMutex(point->mutex);
     }
 }
