@@ -3,9 +3,9 @@
 
 typedef struct memory_s memory_t;
 
-int memory_count(heap_t * self, int index);
-int memory_size(heap_t * self, int index);
-void memory_set(heap_t * self, int index, int offset, char * word, int length);
-char * memory_get(heap_t * self, int index, int offset, int length);
+int memory_count(memory_t * self);
+int memory_size(memory_t * self);
+void memory_set(memory_t * self, int offset, char * word, int length);
+char * memory_get(memory_t * self, int offset, int length);
 
 #endif

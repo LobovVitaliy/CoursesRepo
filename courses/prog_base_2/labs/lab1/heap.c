@@ -7,19 +7,19 @@
 #define MAX_SIZE 100
 
 static memory_t * memory_new(heap_t * self, int size);
-static void memory_free(heap_t * self, int index);
+static void memory_free(memory_t * memory);
 
 
 struct memory_s {
     char * mas;
     int count;
     int size;
+    heap_t * heap;
 };
 
 struct heap_s {
     char mas[MAX_SIZE];
     int count;
-    struct memory_s * memory[3];
     int size;
 };
 
@@ -41,27 +41,28 @@ void heap_free(heap_t * self) {
     free(self);
 }
 
-heap_t * heap_memory_allocate(heap_t * self, int index, int size) {
+memory_t * heap_memory_allocate(heap_t * self, int size) {
+    memory_t * point;
     if (self->size + size <= MAX_SIZE) {
-        self->memory[index] = memory_new(self, size);
+        point = memory_new(self, size);
         self->size += size;
-        return self;
     }
-    return NULL;
+    point->heap = self;
+    return point;
 }
 
-void heap_memory_clear(heap_t * self, int index) {
+void heap_memory_clear(heap_t * self, memory_t * memory) {
     int i;
-    char * point = self->memory[index]->mas;
+    char * point = memory->mas;
 
-    for(i = 0; i < self->memory[index]->size; i++) {
+    for(i = 0; i < memory->size; i++) {
         *point = '_';
         point++;
     }
-    self->count -= self->memory[index]->count;
-    self->size -= self->memory[index]->size;
+    self->count -= memory->count;
+    self->size -= memory->size;
 
-    memory_free(self, index);
+    memory_free(memory);
 }
 
 int heap_count(heap_t * self) {
@@ -84,6 +85,7 @@ char * heapMas (heap_t * self) {
 }
 
 
+
 static memory_t * memory_new(heap_t * self, int size) {
     memory_t * p = malloc(sizeof(struct memory_s));
     p->mas = self->mas + self->size;
@@ -92,19 +94,19 @@ static memory_t * memory_new(heap_t * self, int size) {
     return p;
 }
 
-static void memory_free(heap_t * self, int index) {
-    free(self->memory[index]);
+static void memory_free(memory_t * memory) {
+    free(memory);
 }
 
-int memory_count(heap_t * self, int index) {
-    return self->memory[index]->count;
+int memory_count(memory_t * self) {
+    return self->count;
 }
 
-int memory_size(heap_t * self, int index) {
-    return self->memory[index]->size;
+int memory_size(memory_t * self) {
+    return self->size;
 }
 
-void memory_set(heap_t * self, int index, int offset, char * word, int length) {
+void memory_set(memory_t * self, int offset, char * word, int length) {
     int i;
     char string[length];
 
@@ -115,29 +117,29 @@ void memory_set(heap_t * self, int index, int offset, char * word, int length) {
         word++;
     }
 
-    char * point = self->memory[index]->mas + self->memory[index]->count;
+    char * point = self->mas + self->count;
 
-    if (self->memory[index]->count + length <= self->memory[index]->size) {
+    if (self->count + length <= self->size) {
         for(i = 0; i < length; i++) {
             *point = string[i];
             point++;
         }
-        self->memory[index]->count += length;
         self->count += length;
+        self->heap->count += length;
     }
 }
 
-char * memory_get(heap_t * self, int index, int offset, int length) {
-    char * point = self->memory[index]->mas;
+char * memory_get(memory_t * self, int offset, int length) {
+    char * point = self->mas;
     point += offset - 1;
     char * string;
     int size;
     int i;
 
-    if(offset + length <= self->memory[index]->size)
+    if(offset + length <= self->size)
         size = length;
     else
-        size = self->memory[index]->size - offset + 1;
+        size = self->size - offset + 1;
 
     string = malloc(sizeof(char) * size);
 
