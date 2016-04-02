@@ -1,4 +1,4 @@
-#include <stdio.h>
+/*#include <stdio.h>
 #include <stdlib.h>
 
 #include "heap.h"
@@ -16,7 +16,7 @@ int main()
         printf("Your string: %s\n\n", str);
 
         puts("First");
-            memory_set(mem1, 8, str, 5);
+            memory_set(mem1, 1, str, 2);
             printf("\tString: %s\n", memory_get(mem1, 1, 35));
             printf("\tMemory count: %i\n", memory_count(mem1));
             printf("\tMemory size: %i\n", memory_size(mem1));
@@ -103,4 +103,5 @@ int main()
 
     heap_free(heap);
     return 0;
-}
+}*/
+
