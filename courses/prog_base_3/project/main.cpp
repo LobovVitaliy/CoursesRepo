@@ -7,9 +7,9 @@
 using namespace std;
 using namespace sf;
 
+void menu(RenderWindow & window);
 void game(RenderWindow & window);
 void settings(RenderWindow & window);
-void menu(RenderWindow & window);
 
 class Images
 {
@@ -61,6 +61,7 @@ void menu(RenderWindow & window)
 
         menuNum = 0;
         window.clear(Color(129, 181, 221)); // Зачем ?
+        //window.clear();
 
         if (IntRect(222, 252, 245, 78).contains(Mouse::getPosition(window)))
         {
@@ -89,7 +90,6 @@ void menu(RenderWindow & window)
             if (menuNum == 1)
             {
                 game(window);
-                puts("OK");
             }
             else if (menuNum == 2)
             {
@@ -138,14 +138,7 @@ void settings(RenderWindow & window)
 
 void game(RenderWindow & window)
 {
-
-    Image map_image;//объект изображения для карты
-    map_image.loadFromFile("map.png");//загружаем файл для карты
-    Texture map;//текстура карты
-    map.loadFromImage(map_image);//заряжаем текстуру картинкой
-    Sprite s_map;//создаём спрайт для карты
-    s_map.setTexture(map);//заливаем текстуру спрайтом
-
+    Images map("map.png");
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
@@ -156,17 +149,17 @@ void game(RenderWindow & window)
                 window.close();
         }
 
-    for (int i = 0; i < HEIGHT_MAP; i++)
-        for (int j = 0; j < WIDTH_MAP; j++)
+        for (int i = 0; i < HEIGHT_MAP; i++)
         {
-            if (TileMap[i][j] == ' ')  s_map.setTextureRect(IntRect(0, 0, 32, 32)); //если встретили символ пробел, то рисуем 1й квадратик
-            if (TileMap[i][j] == 's')  s_map.setTextureRect(IntRect(32, 0, 32, 32));//если встретили символ s, то рисуем 2й квадратик
-            if ((TileMap[i][j] == '0')) s_map.setTextureRect(IntRect(64, 0, 32, 32));//если встретили символ 0, то рисуем 3й квадратик
+            for (int j = 0; j < WIDTH_MAP; j++)
+            {
+                if (TileMap[i][j] == ' ') map.sprite.setTextureRect(IntRect(0, 0, 32, 32));
+                if (TileMap[i][j] == 's') map.sprite.setTextureRect(IntRect(32, 0, 32, 32));
+                if (TileMap[i][j] == '0') map.sprite.setTextureRect(IntRect(64, 0, 32, 32));
 
-
-            s_map.setPosition(j * 32, i * 32);//по сути раскидывает квадратики, превращая в карту. то есть задает каждому из них позицию. если убрать, то вся карта нарисуется в одном квадрате 32*32 и мы увидим один квадрат
-
-            window.draw(s_map);//рисуем квадратики на экран
+                map.sprite.setPosition(j * 32, i * 32);
+                window.draw(map.sprite);
+            }
         }
 
         window.display();
@@ -176,14 +169,64 @@ void game(RenderWindow & window)
 int main()
 {
     RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
-    menu(window);
+    //menu(window);
+    /*
+        if (Mouse::isButtonPressed(sf::Mouse::Left))
+            herosprite.setColor(Color::Red);
+    */
+    Image hero;
+    hero.loadFromFile("monsterNew.png");
+    hero.createMaskFromColor(Color::White);
+
+    Texture herotexture;
+	herotexture.loadFromImage(hero);
+
+	Sprite herosprite;
+	herosprite.setTexture(herotexture);
+	herosprite.setTextureRect(IntRect(0, 0, 31, 32)); //получили нужный нам прямоугольник с котом
+	herosprite.setPosition(250,250); //выводим спрайт в позицию x y
+
+    Clock clock;
+    float CurrentFrame = 0;
+
+	while (window.isOpen())
+	{
+        float time = clock.getElapsedTime().asMicroseconds();
+        clock.restart();
+        time = time/800;
+
+		Event event;
+		while (window.pollEvent(event))
+		{
+			if (event.type == Event::Closed)
+			window.close();
+		}
+
+        if (Keyboard::isKeyPressed(Keyboard::W)) {
+			CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+			herosprite.setTextureRect(IntRect(0, 32 * int(CurrentFrame), 31, 32));
+			herosprite.move(0, -0.2*time);
+		}
+		else
+            herosprite.setTextureRect(IntRect(0, 0, 31, 32));
+
+		if (Keyboard::isKeyPressed(Keyboard::A)) { herosprite.move(-0.2*time, 0); } //первая координата Х отрицательна =>идём влево
+		if (Keyboard::isKeyPressed(Keyboard::D)) { herosprite.move(0.2*time, 0); } //первая координата Х положительна =>идём вправо
+		if (Keyboard::isKeyPressed(Keyboard::S)) { herosprite.move(0, 0.5*time); } //вторая координата (У) положительна =>идём вниз (если не понятно почему именно вниз - смотрим предыдущие уроки)
+
+		window.clear();
+		window.draw(herosprite);
+		window.display();
+	}
+
     window.close();
     return 0;
 }
 
 /*using namespace sf;
 
-////////////////////////////////////////////////////КЛАСС ИГРОКА////////////////////////
+/////////////////КЛАСС ИГРОКА////////////////////////
 class Player {
 	/* это задел на следующие уроки,прошу не обращать внимания)
 private: float w, h, dx, dy, x, y, speed;
