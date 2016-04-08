@@ -2,71 +2,84 @@
 #include <Windows.h>
 #include <iostream>
 
+#include "map.h"
+
 using namespace std;
 using namespace sf;
 
-void game();
+void game(RenderWindow & window);
 void settings(RenderWindow & window);
 void menu(RenderWindow & window);
 
+class Images
+{
+public:
+    int positionX;
+    int positionY;
+    int originX;
+    int originY;
+    String File;
+    Image image;
+    Texture texture;
+    Sprite sprite;
 
+    Images(String F, int positionX = 0, int positionY = 0, int originX = 0, int originY = 0)    //Конструктор с параметрами(формальными) для класса Player. При создании объекта класса мы будем задавать имя файла, координату Х и У, ширину и высоту
+    {
+        File = F;
+        image.loadFromFile(File);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        sprite.setOrigin(Vector2f(originX, originY));
+    }
+};
 
 void menu(RenderWindow & window)
 {
-    Texture Background_T, NewGame_T, LoadGame_T, SettingsGame_T, QuitGame_T;
-    Background_T.loadFromFile("Background.png");
-    NewGame_T.loadFromFile("NewGame.png");
-    LoadGame_T.loadFromFile("LoadGame.png");
-    SettingsGame_T.loadFromFile("SettingsGame.png");
-    QuitGame_T.loadFromFile("QuitGame.png");
-
-    Sprite Background_S, NewGame_S, LoadGame_S, SettingsGame_S, QuitGame_S;
-    Background_S.setTexture(Background_T);
-    NewGame_S.setTexture(NewGame_T);
-    LoadGame_S.setTexture(LoadGame_T);
-    SettingsGame_S.setTexture(SettingsGame_T);
-    QuitGame_S.setTexture(QuitGame_T);
+    Images Background("Background.png");
+    Images NewGame("NewGame.png");
+    Images LoadGame("LoadGame.png");
+    Images SettingsGame("SettingsGame.png");
+    Images QuitGame("QuitGame.png");
 
     bool isMenu = true;
     int menuNum = 0;
 
     while (isMenu)
     {
-        // проверить все события окна, которые были вызваны с последней итерации цикла
         Event event;
         while (window.pollEvent(event))
         {
-            // "запрос закрытия" событие: мы закрываем окно
             if (event.type == Event::Closed)
                 window.close();
         }
 
-        NewGame_S.setColor(Color::White);
-        LoadGame_S.setColor(Color::White);
-        SettingsGame_S.setColor(Color::White);
-        QuitGame_S.setColor(Color::White);
+        NewGame.sprite.setColor(Color::White);
+        LoadGame.sprite.setColor(Color::White);
+        SettingsGame.sprite.setColor(Color::White);
+        QuitGame.sprite.setColor(Color::White);
 
         menuNum = 0;
         window.clear(Color(129, 181, 221)); // Зачем ?
 
         if (IntRect(222, 252, 245, 78).contains(Mouse::getPosition(window)))
         {
-            NewGame_S.setColor(Color(230, 100, 200));
+            NewGame.sprite.setColor(Color(230, 100, 200));
             menuNum = 1;
         }
         else if (IntRect(222, 340, 245, 78).contains(Mouse::getPosition(window)))
         {
-            LoadGame_S.setColor(Color(230, 100, 200));
+            LoadGame.sprite.setColor(Color(230, 100, 200));
             menuNum = 2;
         }
         else if (IntRect(222, 428, 245, 78).contains(Mouse::getPosition(window)))
         {
-            SettingsGame_S.setColor(Color(230, 100, 200));
+            SettingsGame.sprite.setColor(Color(230, 100, 200));
             menuNum = 3;
         }
         else if (IntRect(222, 516, 245, 78).contains(Mouse::getPosition(window)))
         {
-            QuitGame_S.setColor(Color(230, 100, 200));
+            QuitGame.sprite.setColor(Color(230, 100, 200));
             menuNum = 4;
         }
 
@@ -75,7 +88,8 @@ void menu(RenderWindow & window)
         {
             if (menuNum == 1)
             {
-                game();
+                game(window);
+                puts("OK");
             }
             else if (menuNum == 2)
             {
@@ -92,11 +106,11 @@ void menu(RenderWindow & window)
             }
         }
 
-        window.draw(Background_S);
-        window.draw(NewGame_S);
-        window.draw(LoadGame_S);
-        window.draw(SettingsGame_S);
-        window.draw(QuitGame_S);
+        window.draw(Background.sprite);
+        window.draw(NewGame.sprite);
+        window.draw(LoadGame.sprite);
+        window.draw(SettingsGame.sprite);
+        window.draw(QuitGame.sprite);
 
         window.display();
     }
@@ -104,55 +118,57 @@ void menu(RenderWindow & window)
 
 void settings(RenderWindow & window)
 {
-    Texture Settings_T;
-    Settings_T.loadFromFile("Settings.png");
-
-    Sprite Settings_S;
-    Settings_S.setTexture(Settings_T);
-
-    Texture SettingsBackground_T;
-    SettingsBackground_T.loadFromFile("SettingsBackground.png");
-
-    Sprite SettingsBackground_S;
-    SettingsBackground_S.setTexture(SettingsBackground_T);
-
+    Images Settings("Settings.png");
+    Images SettingsBackground("SettingsBackground.png");
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
-        // проверить все события окна, которые были вызваны с последней итерации цикла
         Event event;
         while (window.pollEvent(event))
         {
-            // "запрос закрытия" событие: мы закрываем окно
             if (event.type == Event::Closed)
                 window.close();
         }
 
-        window.draw(SettingsBackground_S);
-        window.draw(Settings_S);
+        window.draw(SettingsBackground.sprite);
+        window.draw(Settings.sprite);
         window.display();
     }
 }
 
-void game() {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
+void game(RenderWindow & window)
+{
 
-    Texture Background_T, NewGame_T, LoadGame_T, SettingsGame_T, QuitGame_T;
-    Background_T.loadFromFile("Background.png");
+    Image map_image;//объект изображения для карты
+    map_image.loadFromFile("map.png");//загружаем файл для карты
+    Texture map;//текстура карты
+    map.loadFromImage(map_image);//заряжаем текстуру картинкой
+    Sprite s_map;//создаём спрайт для карты
+    s_map.setTexture(map);//заливаем текстуру спрайтом
 
-    Sprite Background_S, NewGame_S, LoadGame_S, SettingsGame_S, QuitGame_S;
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
-        // проверить все события окна, которые были вызваны с последней итерации цикла
         Event event;
         while (window.pollEvent(event))
         {
-            // "запрос закрытия" событие: мы закрываем окно
             if (event.type == Event::Closed)
                 window.close();
         }
-        window.draw(Background_S);
+
+    for (int i = 0; i < HEIGHT_MAP; i++)
+        for (int j = 0; j < WIDTH_MAP; j++)
+        {
+            if (TileMap[i][j] == ' ')  s_map.setTextureRect(IntRect(0, 0, 32, 32)); //если встретили символ пробел, то рисуем 1й квадратик
+            if (TileMap[i][j] == 's')  s_map.setTextureRect(IntRect(32, 0, 32, 32));//если встретили символ s, то рисуем 2й квадратик
+            if ((TileMap[i][j] == '0')) s_map.setTextureRect(IntRect(64, 0, 32, 32));//если встретили символ 0, то рисуем 3й квадратик
+
+
+            s_map.setPosition(j * 32, i * 32);//по сути раскидывает квадратики, превращая в карту. то есть задает каждому из них позицию. если убрать, то вся карта нарисуется в одном квадрате 32*32 и мы увидим один квадрат
+
+            window.draw(s_map);//рисуем квадратики на экран
+        }
+
         window.display();
     }
 }
