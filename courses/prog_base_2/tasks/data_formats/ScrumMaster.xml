@@ -1,0 +1,60 @@
+<ScrumMasters>
+
+    <ScrumMaster>
+        <name>Taras</name>
+        <surname>Shevchenko</surname>
+        <company year="7">SoftServe</company>
+        <date>1992-03-09</date>
+        <count>3</count>
+        <score>4.6</score>
+        <teams>
+            <team>
+                <nameTeam>DreamTeam</nameTeam>
+                <nameProject>BotiCar</nameProject>
+            </team>
+            <team>
+                <nameTeam>LimBit</nameTeam>
+                <nameProject>LaserBox</nameProject>
+            </team>
+        </teams>
+    </ScrumMaster>
+
+    <ScrumMaster>
+        <name>Jon</name>
+        <surname>Adams</surname>
+        <company year="2">Infopulse</company>
+        <date>2004-11-03</date>
+        <count>2</count>
+        <score>5.0</score>
+        <teams>
+            <team>
+                <nameTeam>NBNL</nameTeam>
+                <nameProject>Smart garage</nameProject>
+            </team>
+            <team>
+                <nameTeam>Simple</nameTeam>
+                <nameProject>Candle</nameProject>
+            </team>
+        </teams>
+    </ScrumMaster>
+
+    <ScrumMaster>
+        <name>Burlaka</name>
+        <surname>Ira</surname>
+        <company year="3">Miratech</company>
+        <date>2000-01-01</date>
+        <count>4</count>
+        <score>4.3</score>
+        <teams>
+            <team>
+                <nameTeam>Plar</nameTeam>
+                <nameProject>Weapon</nameProject>
+            </team>
+            <team>
+                <nameTeam>IND</nameTeam>
+                <nameProject>Smart computer</nameProject>
+            </team>
+        </teams>
+    </ScrumMaster>
+
+</ScrumMasters>

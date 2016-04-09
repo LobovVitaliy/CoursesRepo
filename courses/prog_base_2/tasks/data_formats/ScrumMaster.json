@@ -1,0 +1,70 @@
+[
+    {
+        "name" : "Taras",
+        "surname" : "Shevchenko",
+        "work" : {
+            "company" : "SoftServe",
+            "year" : 4
+        },
+        "date" : "1992-03-09",
+        "count" : 3,
+        "score" : 4.6,
+        "teams" : [
+            {
+                "nameTeam" : "DreamTeam",
+                "nameProject" : "BotiCar"
+            },
+
+            {
+                "nameTeam" : "LimBit",
+                "nameProject" : "LaserBox"
+            }
+        ]
+    },
+
+    {
+        "name" : "Jon",
+        "surname" : "Adams",
+        "work" : {
+            "company" : "Infopulse",
+            "year" : 3
+        },
+        "date" : "2004-11-03",
+        "count" : 2,
+        "score" : 5.0,
+        "teams" : [
+            {
+                "nameTeam" : "NBNL",
+                "nameProject" : "Smart garage"
+            },
+
+            {
+                "nameTeam" : "Simple",
+                "nameProject" : "Ñandle"
+            }
+        ]
+    },
+
+    {
+        "name" : "Burlaka",
+        "surname" : "Ira",
+        "work" : {
+            "company" : "Miratech",
+            "year" : 7
+        },
+        "date" : "2000-01-01",
+        "count" : 4,
+        "score" : 4.3,
+        "teams" : [
+            {
+                "nameTeam" : "Plar",
+                "nameProject" : "Weapon"
+            },
+
+            {
+                "nameTeam" : "IND",
+                "nameProject" : "Smart computer"
+            }
+        ]
+    }
+]
