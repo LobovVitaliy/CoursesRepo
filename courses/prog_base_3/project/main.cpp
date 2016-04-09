@@ -61,7 +61,6 @@ void menu(RenderWindow & window)
 
         menuNum = 0;
         window.clear(Color(129, 181, 221)); // Çà÷åì ?
-        //window.clear();
 
         if (IntRect(222, 252, 245, 78).contains(Mouse::getPosition(window)))
         {
@@ -166,15 +165,245 @@ void game(RenderWindow & window)
     }
 }
 
+/*
 int main()
 {
     RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
+
+    Vertex line[] =
+    {
+        Vertex(sf::Vector2f(5, 5)),
+        Vertex(sf::Vector2f(6, 6))
+    };
+
+    /*RectangleShape rectangle(sf::Vector2f(0, 0));
+    rectangle.setSize(sf::Vector2f(0, 0));
+    rectangle.setFillColor(Color::Transparent);
+    rectangle.setOutlineThickness(2);
+    rectangle.setOutlineColor(sf::Color(250, 150, 100));*/
+/*
+    double x = 0;
+    double y = 0;
+
+    double dx = 0;
+    double dy = 0;
+
+    while (!Keyboard::isKeyPressed(Keyboard::Escape))
+    {
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+
+        dx = 0;
+        dy = 0;
+
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
+                window.close();
+            }
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if(pos.x >= 0 && pos.y >= 0)
+                    {
+                        x = pos.x;
+                        y = pos.y;
+                        cout<<x<<"   "<<y<<endl;
+                    }
+                }
+            }
+
+            cout<<"position:  "<<pos.x<<"   "<<pos.y<<endl;
+            if (event.type == Event::MouseButtonReleased)//åñëè îòïóñòèëè êëàâèøó
+                if (event.key.code == Mouse::Left) //à èìåííî ëåâóþ
+                {
+                    if(pos.x >= 0 && pos.y >= 0)
+                    {
+                        dx = pos.x;// - x;
+                        dy = pos.y;// - y;
+                        cout<<"        "<<dx<<"   "<<dy<<endl;
+                        //rectangle.setPosition(x, y);
+                        //rectangle.setSize(sf::Vector2f(dx, dy));
+
+                        line[0] = Vertex(sf::Vector2f(x, y));
+                        line[1] = Vertex(sf::Vector2f(dx, dy));
+
+                        window.draw(line, 2, Lines);
+                        window.display();
+
+                    }
+                }
+
+        }
+
+        //window.clear();
+
+        window.display();
+
+        //window.draw(rectangle);
+        //Sleep(100); window.clear();
+    }
+
+    window.close();
+    return EXIT_SUCCESS;
+}*/
+
+int main()
+{
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
+    window.setFramerateLimit(50);
     //menu(window);
-    /*
-        if (Mouse::isButtonPressed(sf::Mouse::Left))
-            herosprite.setColor(Color::Red);
-    */
-    Image hero;
+
+    RectangleShape rectangle(sf::Vector2f(0, 0));
+    rectangle.setSize(sf::Vector2f(0, 0));
+    rectangle.setFillColor(Color::Transparent);
+    rectangle.setOutlineThickness(2);
+    rectangle.setOutlineColor(sf::Color(250, 150, 100));
+
+    bool pressed = false;
+
+    double x = 0;
+    double y = 0;
+    double dx = 0;
+    double dy = 0;
+
+    while (window.isOpen())
+    {
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
+                window.close();
+            }
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if(pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
+                    {
+                        pressed = true;
+                        x = pos.x;
+                        y = pos.y;
+                        cout<<x<<"   "<<y<<endl;
+                    }
+                }
+            }
+            cout<<"        "<<pos.x<<"   "<<pos.y<<endl;
+            if (event.type == Event::MouseButtonReleased)
+                if (event.key.code == Mouse::Left)
+                {
+                    //if(pos.x >= 0 && pos.y >= 0)
+                    {
+                        dx = pos.x;
+                        dy = pos.y;
+                        cout<<"        "<<dx<<"   "<<dy<<endl;
+
+                        pressed = false;
+                        rectangle.setSize(sf::Vector2f(0, 0));
+                        window.display();
+
+                    }
+                }
+        }
+        if (pressed == true)
+        {
+            rectangle.setPosition(x, y);
+            rectangle.setSize(sf::Vector2f(pos.x-x, pos.y-y));
+        }
+        window.clear();
+        window.draw(rectangle);
+        window.display();
+    }
+
+    window.close();
+    return 0;
+}
+
+/////////////////ÊÂÀÄÐÀÒ///////////////////////////////
+    /*RectangleShape rectangle(sf::Vector2f(0, 0));
+    rectangle.setSize(sf::Vector2f(0, 0));
+    rectangle.setFillColor(Color::Transparent);
+    rectangle.setOutlineThickness(2);
+    rectangle.setOutlineColor(sf::Color(250, 150, 100));
+
+    bool pressed = false;
+
+    double x = 0;
+    double y = 0;
+    double dx = 0;
+    double dy = 0;
+
+    while (window.isOpen())
+    {
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
+                window.close();
+            }
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if(pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
+                    {
+                        pressed = true;
+                        x = pos.x;
+                        y = pos.y;
+                        cout<<x<<"   "<<y<<endl;
+                    }
+                }
+            }
+            cout<<"        "<<pos.x<<"   "<<pos.y<<endl;
+            if (event.type == Event::MouseButtonReleased)
+                if (event.key.code == Mouse::Left)
+                {
+                    //if(pos.x >= 0 && pos.y >= 0)
+                    {
+                        dx = pos.x;
+                        dy = pos.y;
+                        cout<<"        "<<dx<<"   "<<dy<<endl;
+
+                        pressed = false;
+                        rectangle.setSize(sf::Vector2f(0, 0));
+                        window.display();
+
+                    }
+                }
+        }
+        if (pressed == true)
+        {
+            rectangle.setPosition(x, y);
+            rectangle.setSize(sf::Vector2f(pos.x-x, pos.y-y));
+        }
+        window.clear();
+        window.draw(rectangle);
+        window.display();
+    }*/
+
+
+
+
+
+
+
+/////////////////ÄÂÈÆÅÍÈÅ ÃÅÐÎß////////////////////////
+/*
+    if (Mouse::isButtonPressed(sf::Mouse::Left))
+        herosprite.setColor(Color::Red);
+*/
+/*    Image hero;
     hero.loadFromFile("monsterNew.png");
     hero.createMaskFromColor(Color::White);
 
@@ -220,9 +449,7 @@ int main()
 		window.display();
 	}
 
-    window.close();
-    return 0;
-}
+*/
 
 /*using namespace sf;
 
