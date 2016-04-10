@@ -264,6 +264,8 @@ public:
     Texture texture;
     Sprite sprite;
 
+    float CurrentFrame = 0;
+
     Player(String file, float positionX, float positionY, float width, float height)
     {
         //File = file;
@@ -278,6 +280,43 @@ public:
         sprite.setPosition(positionX, positionY);
         sprite.setTextureRect(IntRect(0, 0, w, h));
         //sprite.setOrigin(Vector2f(originX, originY));
+    }
+
+    void movement(float time)
+    {
+        sprite.setTextureRect(IntRect(32, 0, 31, 29));
+
+        if (Keyboard::isKeyPressed(Keyboard::W))
+        {
+            dir = 3; speed = 0.2;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(0, 32 * int(CurrentFrame), 31, 32));
+        }
+
+        if (Keyboard::isKeyPressed(Keyboard::S))
+        {
+            dir = 2; speed = 0.2;
+            CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(32, 29 * int(CurrentFrame), 31, 29));
+        }
+
+		if (Keyboard::isKeyPressed(Keyboard::A))
+        {
+			dir = 1; speed = 0.2;
+			CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+			sprite.setTextureRect(IntRect(93, 32 * int(CurrentFrame), 28, 32));
+		}
+
+		if (Keyboard::isKeyPressed(Keyboard::D))
+        {
+			dir = 0; speed = 0.2;
+			CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+			sprite.setTextureRect(IntRect(64, 32 * int(CurrentFrame), 28, 32));
+		}
     }
 
     void update(float time) //функция "оживления" объекта класса. update - обновление. принимает в себя время SFML, вследствие чего работает бесконечно, давая персонажу движение.
@@ -317,7 +356,25 @@ int main()
     window.setFramerateLimit(50);
     //menu(window);
 
+
     Player hero("hero.png", 250, 250, 31, 32);
+
+    ////rectangle////
+    RectangleShape rectangle(sf::Vector2f(0, 0));
+    rectangle.setSize(sf::Vector2f(0, 0));
+    rectangle.setFillColor(Color::Transparent);
+    rectangle.setOutlineThickness(2);
+    rectangle.setOutlineColor(sf::Color(250, 150, 100));
+
+    bool move = false;
+    bool move_draw = false;
+    bool pressed_rectangle = false;
+
+    float x = 0;   // координата х при нажатии на лкм
+    float y = 0;   // координата у при нажатии на лкм
+
+    float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
+    float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
 
     Clock clock;
     float CurrentFrame = 0;
@@ -328,51 +385,89 @@ int main()
         clock.restart();
         time = time/800;
 
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+        Vector2f sprite_pos = hero.sprite.getPosition();
+
+        move_draw = true;
+
         Event event;
         while (window.pollEvent(event))
         {
             if (event.type == Event::Closed)
+            {
                 window.close();
+            }
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if (move == false)
+                    {
+                        if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
+                        {
+                            pressed_rectangle = true;
+                            x = pos.x;
+                            y = pos.y;
+                        }
+                    }
+                }
+            }
+
+            if (event.type == Event::MouseButtonReleased)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if (move == true)
+                    {
+                        hero.x = pos.x - 15;
+                        hero.y = pos.y - 16;
+
+                        hero.sprite.setColor(Color::White);
+                        move = false;
+                        move_draw = false;
+                    }
+
+                    if (move_draw == true)
+                    {
+                        dx = pos.x;
+                        dy = pos.y;
+
+                        pressed_rectangle = false;
+                        rectangle.setSize(Vector2f(0, 0));
+                        window.display();
+
+                        if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
+                        {
+                            move = true;
+                            hero.sprite.setColor(Color::Red);
+                        }
+                        else if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
+                                || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
+                                || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
+                                || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
+                           )
+                        {
+                            move = true;
+                            hero.sprite.setColor(Color::Red);
+                        }
+                    }
+                }
+            }
         }
 
-        //hero.sprite.setTextureRect(IntRect(32, 0, 31, 29));
-
-        if (Keyboard::isKeyPressed(Keyboard::W))
-        {
-            hero.dir = 3; hero.speed = 0.2;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            hero.sprite.setTextureRect(IntRect(0, 32 * int(CurrentFrame), 31, 32));
-        }
-
-        if (Keyboard::isKeyPressed(Keyboard::S))
-        {
-            hero.dir = 2; hero.speed = 0.2;
-            CurrentFrame += 0.005*time;
-			if (CurrentFrame > 6) CurrentFrame -= 6;
-            hero.sprite.setTextureRect(IntRect(32, 29 * int(CurrentFrame), 31, 29));
-        }
-
-		if (Keyboard::isKeyPressed(Keyboard::A))
-        {
-			hero.dir = 1; hero.speed = 0.2;
-			CurrentFrame += 0.005*time;
-			if (CurrentFrame > 6) CurrentFrame -= 6;
-			hero.sprite.setTextureRect(IntRect(93, 32 * int(CurrentFrame), 28, 32));
-		}
-
-		if (Keyboard::isKeyPressed(Keyboard::D))
-        {
-			hero.dir = 0; hero.speed = 0.2;
-			CurrentFrame += 0.005*time;
-			if (CurrentFrame > 6) CurrentFrame -= 6;
-			hero.sprite.setTextureRect(IntRect(64, 32 * int(CurrentFrame), 28, 32));
-		}
-
+        hero.movement(time);
         hero.update(time);
+
+        if (pressed_rectangle == true)
+        {
+            rectangle.setPosition(x, y);
+            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
+        }
 
         window.clear();
         window.draw(hero.sprite);
+        window.draw(rectangle);
         window.display();
     }
 
