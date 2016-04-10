@@ -13,24 +13,24 @@ void settings(RenderWindow & window);
 
 class Images
 {
-public:
+public:             // private
     int positionX;
     int positionY;
-    int originX;
-    int originY;
-    String File;
+    //int originX;
+    //int originY;    // public
+    //String File;
     Image image;
     Texture texture;
     Sprite sprite;
 
-    Images(String F, int positionX = 0, int positionY = 0, int originX = 0, int originY = 0)    //Конструктор с параметрами(формальными) для класса Player. При создании объекта класса мы будем задавать имя файла, координату Х и У, ширину и высоту
+    Images(String file, int positionX = 0, int positionY = 0/*, int originX = 0, int originY = 0*/)    //Конструктор с параметрами(формальными) для класса Player. При создании объекта класса мы будем задавать имя файла, координату Х и У, ширину и высоту
     {
-        File = F;
-        image.loadFromFile(File);
+        //File = file;
+        image.loadFromFile(file);
         texture.loadFromImage(image);
         sprite.setTexture(texture);
         sprite.setPosition(positionX, positionY);
-        sprite.setOrigin(Vector2f(originX, originY));
+        //sprite.setOrigin(Vector2f(originX, originY));
     }
 };
 
@@ -251,10 +251,65 @@ int main()
     return EXIT_SUCCESS;
 }*/
 
-/*void move_draw (Sprite herosprite, int i, int j)
-{
 
-}*/
+
+///////КЛАСС ИГРОКА///////
+class Player
+{
+public:
+    float x, y, w, h, dx, dy, speed = 0;   //координаты игрока х и у, высота ширина, ускорение (по х и по у), сама скорость
+    int dir = 0;                           //направление (direction) движения игрока
+    //String File;
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
+    Player(String file, float positionX, float positionY, float width, float height)
+    {
+        //File = file;
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        image.loadFromFile(file);
+        image.createMaskFromColor(Color::White);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        sprite.setTextureRect(IntRect(0, 0, w, h));
+        //sprite.setOrigin(Vector2f(originX, originY));
+    }
+
+    void update(float time) //функция "оживления" объекта класса. update - обновление. принимает в себя время SFML, вследствие чего работает бесконечно, давая персонажу движение.
+    {
+        switch (dir)        //реализуем поведение в зависимости от направления (каждая цифра соответствует направлению)
+        {
+        case 0:
+            dx = speed;
+            dy = 0;
+            break;          //по иксу задаем положительную скорость, по игреку зануляем. получаем, что персонаж идет только вправо
+        case 1:
+            dx = -speed;
+            dy = 0;
+            break;          //по иксу задаем отрицательную скорость, по игреку зануляем. получается, что персонаж идет только влево
+        case 2:
+            dx = 0;
+            dy = speed;
+            break;          //по иксу задаем нулевое значение, по игреку положительное. получается, что персонаж идет только вниз
+        case 3:
+            dx = 0;
+            dy = -speed;
+            break;           //по иксу задаем нулевое значение, по игреку отрицательное. получается, что персонаж идет только вверх
+        }
+
+        x += dx*time;        //наше ускорение на время получаем смещение координат и как следствие движение
+        y += dy*time;        //аналогично по игреку
+
+        speed = 0;                  //зануляем скорость, чтобы персонаж остановился.
+        sprite.setPosition(x,y);    //выводим спрайт в позицию x y , посередине. бесконечно выводим в этой функции, иначе бы наш спрайт стоял на месте.
+    }
+};
+
 
 int main()
 {
@@ -262,120 +317,62 @@ int main()
     window.setFramerateLimit(50);
     //menu(window);
 
-    ////hero////
-    Image hero;
-    hero.loadFromFile("monsterNew.png");
-    hero.createMaskFromColor(Color::White);
+    Player hero("hero.png", 250, 250, 31, 32);
 
-    Texture herotexture;
-    herotexture.loadFromImage(hero);
-
-    Sprite herosprite;
-    herosprite.setTexture(herotexture);
-    herosprite.setTextureRect(IntRect(0, 0, 31, 32));
-    herosprite.setPosition(250,250);
-
-    ////rectangle////
-    RectangleShape rectangle(sf::Vector2f(0, 0));
-    rectangle.setSize(sf::Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(sf::Color(250, 150, 100));
-
-    bool move = false;
-    bool move_draw = false;
-    bool pressed_rectangle = false;
-
-    double x = 0;   // координата х при нажатии на лкм
-    double y = 0;   // координата у при нажатии на лкм
-
-    double dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    double dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
+    Clock clock;
+    float CurrentFrame = 0;
 
     while (window.isOpen())
     {
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-        Vector2f sprite_pos = herosprite.getPosition();
-
-        move_draw = true;
+        float time = clock.getElapsedTime().asMicroseconds();
+        clock.restart();
+        time = time/800;
 
         Event event;
         while (window.pollEvent(event))
         {
             if (event.type == Event::Closed)
-            {
                 window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    if (move == false)
-                    {
-                        if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                        {
-                            pressed_rectangle = true;
-                            x = pos.x;
-                            y = pos.y;
-                            //cout<<x<<"\t"<<y<<endl;
-                        }
-                    }
-                }
-            }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    if (move == true)
-                    {
-                        herosprite.setPosition(pos.x - 15, pos.y - 16);
-                        herosprite.setColor(Color::White);
-                        move = false;
-                        move_draw = false;
-                    }
-
-                    if (move_draw == true)
-                    {
-                        dx = pos.x;
-                        dy = pos.y;
-                        //cout<<"\t"<<dx<<"\t"<<dy<<endl;
-
-                        pressed_rectangle = false;
-                        rectangle.setSize(Vector2f(0, 0));
-                        window.display();
-
-                        if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                        {
-                            move = true;
-                            herosprite.setColor(Color::Red);
-                            //puts("OK");
-                        }
-                        else if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
-                                || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
-                                || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
-                                || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
-                           )
-                        {
-                            move = true;
-                            herosprite.setColor(Color::Red);
-                            //puts("OKKKKKKK");
-                        }
-                    }
-                }
-            }
         }
 
-        if (pressed_rectangle == true)
+        //hero.sprite.setTextureRect(IntRect(32, 0, 31, 29));
+
+        if (Keyboard::isKeyPressed(Keyboard::W))
         {
-            rectangle.setPosition(x, y);
-            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
+            hero.dir = 3; hero.speed = 0.2;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            hero.sprite.setTextureRect(IntRect(0, 32 * int(CurrentFrame), 31, 32));
         }
+
+        if (Keyboard::isKeyPressed(Keyboard::S))
+        {
+            hero.dir = 2; hero.speed = 0.2;
+            CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+            hero.sprite.setTextureRect(IntRect(32, 29 * int(CurrentFrame), 31, 29));
+        }
+
+		if (Keyboard::isKeyPressed(Keyboard::A))
+        {
+			hero.dir = 1; hero.speed = 0.2;
+			CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+			hero.sprite.setTextureRect(IntRect(93, 32 * int(CurrentFrame), 28, 32));
+		}
+
+		if (Keyboard::isKeyPressed(Keyboard::D))
+        {
+			hero.dir = 0; hero.speed = 0.2;
+			CurrentFrame += 0.005*time;
+			if (CurrentFrame > 6) CurrentFrame -= 6;
+			hero.sprite.setTextureRect(IntRect(64, 32 * int(CurrentFrame), 28, 32));
+		}
+
+        hero.update(time);
 
         window.clear();
-        window.draw(herosprite);
-        window.draw(rectangle);
+        window.draw(hero.sprite);
         window.display();
     }
 
@@ -411,11 +408,11 @@ int main()
     bool move_draw = false;
     bool pressed_rectangle = false;
 
-    double x = 0;   // координата х при нажатии на лкм
-    double y = 0;   // координата у при нажатии на лкм
+    float x = 0;   // координата х при нажатии на лкм
+    float y = 0;   // координата у при нажатии на лкм
 
-    double dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    double dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
+    float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
+    float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
 
     while (window.isOpen())
     {
@@ -506,272 +503,272 @@ int main()
 
 
 ///////////////////////////
-    /*Image hero;
-    hero.loadFromFile("monsterNew.png");
-    hero.createMaskFromColor(Color::White);
+/*Image hero;
+hero.loadFromFile("monsterNew.png");
+hero.createMaskFromColor(Color::White);
 
-    Texture herotexture;
-    herotexture.loadFromImage(hero);
+Texture herotexture;
+herotexture.loadFromImage(hero);
 
-    Sprite herosprite;
-    herosprite.setTexture(herotexture);
-    herosprite.setTextureRect(IntRect(0, 0, 31, 32));
-    herosprite.setPosition(250,250);
+Sprite herosprite;
+herosprite.setTexture(herotexture);
+herosprite.setTextureRect(IntRect(0, 0, 31, 32));
+herosprite.setPosition(250,250);
 
-    ////rectangle////
-    RectangleShape rectangle(sf::Vector2f(0, 0));
-    rectangle.setSize(sf::Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(sf::Color(250, 150, 100));
+////rectangle////
+RectangleShape rectangle(sf::Vector2f(0, 0));
+rectangle.setSize(sf::Vector2f(0, 0));
+rectangle.setFillColor(Color::Transparent);
+rectangle.setOutlineThickness(2);
+rectangle.setOutlineColor(sf::Color(250, 150, 100));
 
-    bool move = false;
-    bool pressed_rectangle = false;
+bool move = false;
+bool pressed_rectangle = false;
 
-    double x = 0;   // координата х при нажатии на лкм
-    double y = 0;   // координата у при нажатии на лкм
+float x = 0;   // координата х при нажатии на лкм
+float y = 0;   // координата у при нажатии на лкм
 
-    double dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    double dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
+float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
+float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
 
-    while (window.isOpen())
+while (window.isOpen())
+{
+    Vector2i pixelPos = Mouse::getPosition(window);
+    Vector2f pos = window.mapPixelToCoords(pixelPos);
+    Vector2f sprite_pos = herosprite.getPosition();
+
+    Event event;
+    while (window.pollEvent(event))
     {
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-        Vector2f sprite_pos = herosprite.getPosition();
-
-        Event event;
-        while (window.pollEvent(event))
+        if (event.type == Event::Closed)
         {
-            if (event.type == Event::Closed)
+            window.close();
+        }
+        if (event.type == Event::MouseButtonPressed)
+        {
+            if (event.key.code == Mouse::Left)
             {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
+                if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
                 {
-                    if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                    {
-                        pressed_rectangle = true;
-                        x = pos.x;
-                        y = pos.y;
-                        cout<<x<<"\t"<<y<<endl;
-                    }
-
+                    pressed_rectangle = true;
+                    x = pos.x;
+                    y = pos.y;
+                    cout<<x<<"\t"<<y<<endl;
                 }
-            }
 
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    dx = pos.x;
-                    dy = pos.y;
-                    cout<<"\t"<<dx<<"\t"<<dy<<endl;
-
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
-
-                    if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                    {
-                        move = true;
-                        herosprite.setColor(Color::Red);
-                        puts("OKKKKKKK");
-                    }
-
-                    if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
-                            || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
-                            || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
-                            || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
-                       )
-                    {
-                        move = true;
-                        herosprite.setColor(Color::Red);
-                        puts("OKKKKKKK");
-                    }
-                }
             }
         }
 
-        if (pressed_rectangle == true)
+        if (event.type == Event::MouseButtonReleased)
         {
-            rectangle.setPosition(x, y);
-            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
-        }
+            if (event.key.code == Mouse::Left)
+            {
+                dx = pos.x;
+                dy = pos.y;
+                cout<<"\t"<<dx<<"\t"<<dy<<endl;
 
-        window.clear();
-        window.draw(herosprite);
-        window.draw(rectangle);
-        window.display();
-    }*/
+                pressed_rectangle = false;
+                rectangle.setSize(Vector2f(0, 0));
+                window.display();
+
+                if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
+                {
+                    move = true;
+                    herosprite.setColor(Color::Red);
+                    puts("OKKKKKKK");
+                }
+
+                if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
+                        || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
+                        || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
+                        || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
+                   )
+                {
+                    move = true;
+                    herosprite.setColor(Color::Red);
+                    puts("OKKKKKKK");
+                }
+            }
+        }
+    }
+
+    if (pressed_rectangle == true)
+    {
+        rectangle.setPosition(x, y);
+        rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
+    }
+
+    window.clear();
+    window.draw(herosprite);
+    window.draw(rectangle);
+    window.display();
+}*/
 
 ///////////////////////////
-    /*Image hero;
-    hero.loadFromFile("monsterNew.png");
-    hero.createMaskFromColor(Color::White);
+/*Image hero;
+hero.loadFromFile("monsterNew.png");
+hero.createMaskFromColor(Color::White);
 
-    Texture herotexture;
-    herotexture.loadFromImage(hero);
+Texture herotexture;
+herotexture.loadFromImage(hero);
 
-    Sprite herosprite;
-    herosprite.setTexture(herotexture);
-    herosprite.setTextureRect(IntRect(0, 0, 31, 32));
-    herosprite.setPosition(250,250);
+Sprite herosprite;
+herosprite.setTexture(herotexture);
+herosprite.setTextureRect(IntRect(0, 0, 31, 32));
+herosprite.setPosition(250,250);
 
-    ////rectangle////
-    RectangleShape rectangle(sf::Vector2f(0, 0));
-    rectangle.setSize(sf::Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(sf::Color(250, 150, 100));
+////rectangle////
+RectangleShape rectangle(sf::Vector2f(0, 0));
+rectangle.setSize(sf::Vector2f(0, 0));
+rectangle.setFillColor(Color::Transparent);
+rectangle.setOutlineThickness(2);
+rectangle.setOutlineColor(sf::Color(250, 150, 100));
 
-    bool move = false;
-    bool pressed_rectangle = false;
+bool move = false;
+bool pressed_rectangle = false;
 
-    double x = 0;   // координата х при нажатии на лкм
-    double y = 0;   // координата у при нажатии на лкм
+float x = 0;   // координата х при нажатии на лкм
+float y = 0;   // координата у при нажатии на лкм
 
-    double dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    double dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
+float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
+float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
 
-    while (window.isOpen())
+while (window.isOpen())
+{
+    Vector2i pixelPos = Mouse::getPosition(window);
+    Vector2f pos = window.mapPixelToCoords(pixelPos);
+    Vector2f sprite_pos = herosprite.getPosition();
+
+    Event event;
+    while (window.pollEvent(event))
     {
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-        Vector2f sprite_pos = herosprite.getPosition();
-
-        Event event;
-        while (window.pollEvent(event))
+        if (event.type == Event::Closed)
         {
-            if (event.type == Event::Closed)
+            window.close();
+        }
+        if (event.type == Event::MouseButtonPressed)
+        {
+            if (event.key.code == Mouse::Left)
             {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    //if (pressed_rectagle == false)
-                    //{
-                        //cout<<sprite_pos.x<<"\t"<<sprite_pos.y<<endl;
-                        //if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy) || IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window))))
+                //if (pressed_rectagle == false)
+                //{
+                    //cout<<sprite_pos.x<<"\t"<<sprite_pos.y<<endl;
+                    //if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy) || IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window))))
 
-                        //if (pressed_mouse == true)
-                        /*if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                        {
-                            herosprite.setPosition(pos.x - 15, pos.y - 16);
-                            herosprite.setColor(Color::White);
-
-                                       // pressed_mouse = false;
-                        }*/
-                    //}
-
-                    /*if (pressed == true && pressed_rectagle == false)
+                    //if (pressed_mouse == true)
+                    /*if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
                     {
                         herosprite.setPosition(pos.x - 15, pos.y - 16);
                         herosprite.setColor(Color::White);
-                        pressed_mouse = false;
-                        pressed = false;
+
+                                   // pressed_mouse = false;
                     }*/
+//}
 
-                    /*if (pressed_mouse == true)
-                     {
+/*if (pressed == true && pressed_rectagle == false)
+{
+    herosprite.setPosition(pos.x - 15, pos.y - 16);
+    herosprite.setColor(Color::White);
+    pressed_mouse = false;
+    pressed = false;
+}*/
 
-                         if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy) || IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window))))
-                         {
-                             //herosprite.setPosition(pos.x - 15, pos.y - 16);
-                             //herosprite.setColor(Color::White);
-                             //pressed_mouse = false;
-                             pressed = true;
-                         }
+/*if (pressed_mouse == true)
+ {
 
-                         /*herosprite.setPosition(pos.x - 15, pos.y - 16);
-                         herosprite.setColor(Color::White);
-                         pressed_mouse = false;*/
-                    /*}
-                    else*/
-                    /*{
-                        if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                        {
-                            herosprite.setColor(Color::Red);
-                            pressed_mouse = true;
-                        }
-                    }*/
+     if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy) || IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window))))
+     {
+         //herosprite.setPosition(pos.x - 15, pos.y - 16);
+         //herosprite.setColor(Color::White);
+         //pressed_mouse = false;
+         pressed = true;
+     }
 
-
-                    /*if (pressed_mouse == true)
-                    {
-                        herosprite.setPosition(pos.x - 15, pos.y - 16);
-                        herosprite.setColor(Color::White);
-                        pressed_mouse = false;
-                    }
-                    else
-                    {
-                        if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                        {
-                            herosprite.setColor(Color::Red);
-                            pressed_mouse = true;
-                        }
-                    }*/
+     /*herosprite.setPosition(pos.x - 15, pos.y - 16);
+     herosprite.setColor(Color::White);
+     pressed_mouse = false;*/
+/*}
+else*/
+/*{
+    if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
+    {
+        herosprite.setColor(Color::Red);
+        pressed_mouse = true;
+    }
+}*/
 
 
-                    /*if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                    {
-                        pressed_rectangle = true;
-                        x = pos.x;
-                        y = pos.y;
-                        cout<<x<<"\t"<<y<<endl;
-                    }
+/*if (pressed_mouse == true)
+{
+    herosprite.setPosition(pos.x - 15, pos.y - 16);
+    herosprite.setColor(Color::White);
+    pressed_mouse = false;
+}
+else
+{
+    if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
+    {
+        herosprite.setColor(Color::Red);
+        pressed_mouse = true;
+    }
+}*/
 
-                }
-            }
 
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    dx = pos.x;
-                    dy = pos.y;
-                    cout<<"\t"<<dx<<"\t"<<dy<<endl;
+/*if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
+{
+    pressed_rectangle = true;
+    x = pos.x;
+    y = pos.y;
+    cout<<x<<"\t"<<y<<endl;
+}
 
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
+}
+}
 
-                    if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                    {
-                        move = true;
-                        herosprite.setColor(Color::Red);
-                        puts("OKKKKKKK");
-                    }
+if (event.type == Event::MouseButtonReleased)
+{
+if (event.key.code == Mouse::Left)
+{
+dx = pos.x;
+dy = pos.y;
+cout<<"\t"<<dx<<"\t"<<dy<<endl;
 
-                    if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
-                            || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
-                            || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
-                            || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
-                       )
-                    {
-                        move = true;
-                        herosprite.setColor(Color::Red);
-                        puts("OKKKKKKK");
-                    }
-                }
-            }
-        }
+pressed_rectangle = false;
+rectangle.setSize(Vector2f(0, 0));
+window.display();
 
-        if (pressed_rectangle == true)
-        {
-            rectangle.setPosition(x, y);
-            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
-        }
+if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
+{
+    move = true;
+    herosprite.setColor(Color::Red);
+    puts("OKKKKKKK");
+}
 
-        window.clear();
-        window.draw(herosprite);
-        window.draw(rectangle);
-        window.display();
-    }*/
+if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
+        || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
+        || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
+        || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
+   )
+{
+    move = true;
+    herosprite.setColor(Color::Red);
+    puts("OKKKKKKK");
+}
+}
+}
+}
+
+if (pressed_rectangle == true)
+{
+rectangle.setPosition(x, y);
+rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
+}
+
+window.clear();
+window.draw(herosprite);
+window.draw(rectangle);
+window.display();
+}*/
 
 
 
@@ -956,10 +953,6 @@ while (window.isOpen())
 
 
 /////////////////ДВИЖЕНИЕ ГЕРОЯ////////////////////////
-/*
-    if (Mouse::isButtonPressed(sf::Mouse::Left))
-        herosprite.setColor(Color::Red);
-*/
 /*    Image hero;
     hero.loadFromFile("monsterNew.png");
     hero.createMaskFromColor(Color::White);
