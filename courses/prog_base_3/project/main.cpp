@@ -1,8 +1,11 @@
 #include <SFML/Graphics.hpp>
 #include <Windows.h>
 #include <iostream>
+#include <cmath>
 
 #include "map.h"
+
+#define MAX_SPEED 0.05
 
 using namespace std;
 using namespace sf;
@@ -257,14 +260,14 @@ int main()
 class Player
 {
 public:
-    float x, y, w, h, dx, dy, speed = 0;   //координаты игрока х и у, высота ширина, ускорение (по х и по у), сама скорость
-    int dir = 0;                           //направление (direction) движения игрока
+    float x, y, w, h, dx, dy, speed;    //координаты игрока х и у, высота ширина, ускорение (по х и по у), сама скорость
+    int dir;                            //направление (direction) движения игрока
+    bool isMove, isSelect;
+    float CurrentFrame;
     //String File;
     Image image;
     Texture texture;
     Sprite sprite;
-
-    float CurrentFrame = 0;
 
     Player(String file, float positionX, float positionY, float width, float height)
     {
@@ -280,6 +283,13 @@ public:
         sprite.setPosition(positionX, positionY);
         sprite.setTextureRect(IntRect(0, 0, w, h));
         //sprite.setOrigin(Vector2f(originX, originY));
+        dir = 0;
+        speed = 0;
+        dx = 0;
+        dy = 0;
+        CurrentFrame = 0;
+        isMove = false;
+        isSelect = false;
     }
 
     void movement(float time)
@@ -288,35 +298,68 @@ public:
 
         if (Keyboard::isKeyPressed(Keyboard::W))
         {
-            dir = 3; speed = 0.2;
+            dir = 0; //3
+            speed = MAX_SPEED;
             CurrentFrame += 0.005*time;
             if (CurrentFrame > 6) CurrentFrame -= 6;
             sprite.setTextureRect(IntRect(0, 32 * int(CurrentFrame), 31, 32));
         }
-
         if (Keyboard::isKeyPressed(Keyboard::S))
         {
-            dir = 2; speed = 0.2;
+            dir = 1;  //2
+            speed = MAX_SPEED;
             CurrentFrame += 0.005*time;
-			if (CurrentFrame > 6) CurrentFrame -= 6;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
             sprite.setTextureRect(IntRect(32, 29 * int(CurrentFrame), 31, 29));
         }
-
-		if (Keyboard::isKeyPressed(Keyboard::A))
+        if (Keyboard::isKeyPressed(Keyboard::A))
         {
-			dir = 1; speed = 0.2;
-			CurrentFrame += 0.005*time;
-			if (CurrentFrame > 6) CurrentFrame -= 6;
-			sprite.setTextureRect(IntRect(93, 32 * int(CurrentFrame), 28, 32));
-		}
-
-		if (Keyboard::isKeyPressed(Keyboard::D))
+            dir = 2; //1
+            speed = MAX_SPEED;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(93, 32 * int(CurrentFrame), 28, 32));
+        }
+        if (Keyboard::isKeyPressed(Keyboard::D))
         {
-			dir = 0; speed = 0.2;
-			CurrentFrame += 0.005*time;
-			if (CurrentFrame > 6) CurrentFrame -= 6;
-			sprite.setTextureRect(IntRect(64, 32 * int(CurrentFrame), 28, 32));
-		}
+            dir = 3; //0
+            speed = MAX_SPEED;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(64, 32 * int(CurrentFrame), 28, 32));
+        }
+        if (Keyboard::isKeyPressed(Keyboard::Q))
+        {
+            dir = 4;
+            speed = MAX_SPEED - 0.01;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(191, 36 * int(CurrentFrame), 37, 36));
+        }
+        if (Keyboard::isKeyPressed(Keyboard::E))
+        {
+            dir = 5;
+            speed = MAX_SPEED - 0.01;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(122, 36 * int(CurrentFrame), 36, 36));
+        }
+        if (Keyboard::isKeyPressed(Keyboard::Z))
+        {
+            dir = 6;
+            speed = MAX_SPEED - 0.01;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(228, 32 * int(CurrentFrame), 33, 32));
+        }
+        if (Keyboard::isKeyPressed(Keyboard::X))
+        {
+            dir = 7;
+            speed = MAX_SPEED - 0.01;
+            CurrentFrame += 0.005*time;
+            if (CurrentFrame > 6) CurrentFrame -= 6;
+            sprite.setTextureRect(IntRect(159, 32 * int(CurrentFrame), 32, 32));
+        }
     }
 
     void update(float time) //функция "оживления" объекта класса. update - обновление. принимает в себя время SFML, вследствие чего работает бесконечно, давая персонажу движение.
@@ -324,21 +367,37 @@ public:
         switch (dir)        //реализуем поведение в зависимости от направления (каждая цифра соответствует направлению)
         {
         case 0:
-            dx = speed;
-            dy = 0;
-            break;          //по иксу задаем положительную скорость, по игреку зануляем. получаем, что персонаж идет только вправо
-        case 1:
-            dx = -speed;
-            dy = 0;
-            break;          //по иксу задаем отрицательную скорость, по игреку зануляем. получается, что персонаж идет только влево
-        case 2:
-            dx = 0;
-            dy = speed;
-            break;          //по иксу задаем нулевое значение, по игреку положительное. получается, что персонаж идет только вниз
-        case 3:
             dx = 0;
             dy = -speed;
             break;           //по иксу задаем нулевое значение, по игреку отрицательное. получается, что персонаж идет только вверх
+        case 1:
+            dx = 0;
+            dy = speed;
+            break;          //по иксу задаем нулевое значение, по игреку положительное. получается, что персонаж идет только вниз
+        case 2:
+            dx = -speed;
+            dy = 0;
+            break;          //по иксу задаем отрицательную скорость, по игреку зануляем. получается, что персонаж идет только влево
+        case 3:
+            dx = speed;
+            dy = 0;
+            break;          //по иксу задаем положительную скорость, по игреку зануляем. получаем, что персонаж идет только вправо
+        case 4:
+            dx = -speed;
+            dy = -speed;
+            break;
+        case 5:
+            dx = speed;
+            dy = -speed;
+            break;
+        case 6:
+            dx = -speed;
+            dy = speed;
+            break;
+        case 7:
+            dx = speed;
+            dy = speed;
+            break;
         }
 
         x += dx*time;        //наше ускорение на время получаем смещение координат и как следствие движение
@@ -356,6 +415,9 @@ int main()
     window.setFramerateLimit(50);
     //menu(window);
 
+    // create a view with the rectangular area of the 2D world to show
+    /*View view(FloatRect(200, 200, 300, 200));
+    view.zoom(1.0f);*/
 
     Player hero("hero.png", 250, 250, 31, 32);
 
@@ -366,8 +428,6 @@ int main()
     rectangle.setOutlineThickness(2);
     rectangle.setOutlineColor(sf::Color(250, 150, 100));
 
-    bool move = false;
-    bool move_draw = false;
     bool pressed_rectangle = false;
 
     float x = 0;   // координата х при нажатии на лкм
@@ -375,6 +435,10 @@ int main()
 
     float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
     float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
+
+    int tempX = 250;      //временная коорд Х.Снимаем ее после нажатия прав клав мыши
+    int tempY = 250;      //коорд Y
+    float distance = 0;   //это расстояние от объекта до тыка курсора
 
     Clock clock;
     float CurrentFrame = 0;
@@ -387,9 +451,8 @@ int main()
 
         Vector2i pixelPos = Mouse::getPosition(window);
         Vector2f pos = window.mapPixelToCoords(pixelPos);
-        Vector2f sprite_pos = hero.sprite.getPosition();
 
-        move_draw = true;
+        //hero.isSelect = false;
 
         Event event;
         while (window.pollEvent(event))
@@ -402,14 +465,30 @@ int main()
             {
                 if (event.key.code == Mouse::Left)
                 {
-                    if (move == false)
+                    if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
                     {
-                        if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                        {
-                            pressed_rectangle = true;
-                            x = pos.x;
-                            y = pos.y;
-                        }
+                        hero.sprite.setColor(Color::White);
+                        pressed_rectangle = true;
+                        hero.isSelect = false;
+                        hero.isMove = false;
+                        x = pos.x;
+                        y = pos.y;
+                    }
+                }
+
+                if (event.key.code == Mouse::Right)
+                {
+                    if (hero.isMove == true)
+                    {
+                        //hero.x = pos.x - 15;
+                        //hero.y = pos.y - 16;
+
+                        tempX = pos.x;
+                        tempY = pos.y;
+
+                        hero.sprite.setColor(Color::White);
+                        hero.isMove = false;
+                        hero.isSelect = true;
                     }
                 }
             }
@@ -418,41 +497,70 @@ int main()
             {
                 if (event.key.code == Mouse::Left)
                 {
-                    if (move == true)
+                    /*if (hero.isMove == true)
                     {
                         hero.x = pos.x - 15;
                         hero.y = pos.y - 16;
 
+                        //tempX = pos.x;
+                        //tempY = pos.y;
+
                         hero.sprite.setColor(Color::White);
-                        move = false;
-                        move_draw = false;
-                    }
+                        hero.isMove = false;
+                        hero.isSelect = true;
+                    }*/
 
-                    if (move_draw == true)
+                    dx = pos.x;
+                    dy = pos.y;
+
+                    pressed_rectangle = false;
+                    rectangle.setSize(Vector2f(0, 0));
+                    window.display();
+
+                    //if (IntRect(hero.x, hero.y, 31, 32).contains(Mouse::getPosition(window)))      тоже самое // находится ли курсор в области спрайта
+                    if (hero.sprite.getGlobalBounds().contains(pos.x, pos.y))
                     {
-                        dx = pos.x;
-                        dy = pos.y;
-
-                        pressed_rectangle = false;
-                        rectangle.setSize(Vector2f(0, 0));
-                        window.display();
-
-                        if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
-                        {
-                            move = true;
-                            hero.sprite.setColor(Color::Red);
-                        }
-                        else if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy))
-                                || ((dx <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= x) && (dy <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= y))
-                                || ((x <= sprite_pos.x + 15) && (y >= sprite_pos.y + 16) && (dx >= sprite_pos.x + 15) && (dy <= sprite_pos.y + 16))
-                                || ((x >= sprite_pos.x + 15) && (y <= sprite_pos.y + 16) && (dx <= sprite_pos.x + 15) && (dy >= sprite_pos.y + 16))
-                           )
-                        {
-                            move = true;
-                            hero.sprite.setColor(Color::Red);
-                        }
+                        hero.isMove = true;
+                        hero.sprite.setColor(Color::Red);
+                    }
+                    else if (((x <= hero.x + 15) && (hero.x + 15 <= dx) && (y <= hero.y + 16) && (hero.y + 16 <= dy))
+                             || ((dx <= hero.x + 15) && (hero.x + 15 <= x) && (dy <= hero.y + 16) && (hero.y + 16 <= y))
+                             || ((x <= hero.x + 15) && (y >= hero.y + 16) && (dx >= hero.x + 15) && (dy <= hero.y + 16))
+                             || ((x >= hero.x + 15) && (y <= hero.y + 16) && (dx <= hero.x + 15) && (dy >= hero.y + 16))
+                            )
+                    {
+                        hero.isMove = true;
+                        hero.sprite.setColor(Color::Red);
                     }
                 }
+            }
+        }
+
+
+        if (hero.isSelect)
+        {
+        	distance = sqrt((tempX - hero.x)*(tempX - hero.x) + (tempY - hero.y)*(tempY - hero.y));
+
+            /*float angle = (180 / M_PI) * atan2((tempY - hero.y), (tempX - hero.x));
+            printf("angle: %.5f\n", angle);
+
+            if (angle == 0) hero.dir = 3;
+            if (angle == 90) hero.dir = 1;
+            if (angle == 180) hero.dir = 2;
+            if (angle == -90) hero.dir = 0;
+
+            if (0 < angle && angle < 90) hero.dir = 7;
+            if (90 < angle && angle < 180) hero.dir = 6;
+            if (-90 < angle && angle < 0) hero.dir = 5;
+            if (-180 < angle && angle < -90) hero.dir = 4;*/
+
+        	if (distance > 2){
+        		hero.x += 0.1*time*(tempX - hero.x) / distance;
+        		hero.y += 0.1*time*(tempY - hero.y) / distance;
+        	}
+        	else
+            {
+                hero.isSelect = true;
             }
         }
 
@@ -466,6 +574,8 @@ int main()
         }
 
         window.clear();
+        //window.setView(view);
+
         window.draw(hero.sprite);
         window.draw(rectangle);
         window.display();
@@ -766,9 +876,9 @@ while (window.isOpen())
     herosprite.setColor(Color::White);
     pressed_mouse = false;
     pressed = false;
-}*/
-
-/*if (pressed_mouse == true)
+}
+/////////
+if (pressed_mouse == true)
  {
 
      if (((x <= sprite_pos.x + 15) && (sprite_pos.x + 15 <= dx) && (y <= sprite_pos.y + 16) && (sprite_pos.y + 16 <= dy) || IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window))))
@@ -781,19 +891,19 @@ while (window.isOpen())
 
      /*herosprite.setPosition(pos.x - 15, pos.y - 16);
      herosprite.setColor(Color::White);
-     pressed_mouse = false;*/
-/*}
-else*/
-/*{
+     pressed_mouse = false;
+/
+else////////////
+{
     if (IntRect(sprite_pos.x, sprite_pos.y, 31, 32).contains(Mouse::getPosition(window)))
     {
         herosprite.setColor(Color::Red);
         pressed_mouse = true;
     }
-}*/
+}
+////////////
 
-
-/*if (pressed_mouse == true)
+if (pressed_mouse == true)
 {
     herosprite.setPosition(pos.x - 15, pos.y - 16);
     herosprite.setColor(Color::White);
@@ -806,10 +916,10 @@ else
         herosprite.setColor(Color::Red);
         pressed_mouse = true;
     }
-}*/
+}
 
-
-/*if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
+//////////////////
+if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
 {
     pressed_rectangle = true;
     x = pos.x;
