@@ -1,384 +1,313 @@
-#include <io.h>
+#include "server.h"
 #include <stdio.h>
-#include <winsock2.h>
-#include <string.h>
+#include <stddef.h>  // ptrdiff_t
 
-#pragma comment(lib,"ws2_32.lib")
-
-int main(int argc, char *argv[])
+void server_reply(socket_t * clientSocket, http_request_t req, master ** scrumMaster)
 {
-    WSADATA wsa;
-    SOCKET s, new_socket;
-    struct sockaddr_in server, client;
-    char client_reply[10000];
-    char server_send[10000];
-    int size = sizeof(struct sockaddr_in);
-
-
-    puts("Initialising Winsock...");
-    if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+    if (strcmp(req.uri, "/ScrumMasters") == 0)
     {
-        printf("Failed. Error Code : %d", WSAGetLastError());
-        return 1;
-    }
-    puts("Initialised.");
-
-    //Create a socket
-    if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
-    {
-        printf("Could not create socket : %d", WSAGetLastError());
-    }
-    puts("Socket created.");
-
-    //Prepare the sockaddr_in structure
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons(8888);
-
-    //Bind
-    if (bind(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR)
-    {
-        printf("Bind failed with error code : %d", WSAGetLastError());
-        exit(EXIT_FAILURE);
-    }
-    puts("Bind done");
-
-    //Listen to incoming connections
-    listen(s, 3);
-
-    //Accept and incoming connection
-    puts("Waiting for incoming connections...");
-    if ((new_socket = accept(s, (struct sockaddr *)&client, &size)) != INVALID_SOCKET )
-    {
-        puts("Connection accepted");
-    }
-
-    while(strcmp(client_reply, "EXIT") != 0)
-    {
-        int count = recv(new_socket, client_reply, 10000, 0);
-        client_reply[count] = '\0';
-
-        fflush(stdout);
-        puts(client_reply);
-        fflush(stdin);
-
-        processing(client_reply, new_socket);
-
-        //gets(server_send);
-        //send(new_socket, server_send, strlen(server_send), 0);
-    }
-
-    if (new_socket == INVALID_SOCKET)
-    {
-        printf("Accept failed with error code : %d", WSAGetLastError());
-        return 1;
-    }
-
-    closesocket(new_socket);
-    closesocket(s);
-    WSACleanup();
-
-    return 0;
-}
-
-void processing(char * client_reply, SOCKET new_socket)
-{
-    char * message = "";
-    char * item = "";
-    int id = 0;
-    int sizeMessage = strlen(client_reply);
-
-    if (strncmp(client_reply, "GET /", 5) == 0)
-    {
-        message = strchr(client_reply, '/') + 1;
-        message = strtok(message, " ");
-
-        if (strlen(message) == sizeMessage - 5)
+        if (strcmp(req.method, "GET") == 0)
         {
-            if ((item = strchr(message, '/')) == NULL)
-            {
-                printf("item = %s", message);
-            }
-            else
-            {
-                item++;
-                int check = 0;
-
-                message = strtok(message, "/");
-                for (int i = 0; i < strlen(item); i++)
-                {
-                    if (!isdigit(item[i]))
-                        check++;
-                }
-                if (check == 0)
-                {
-                    id = atoi(item);
-                    printf("item = %s, id = %i\n", message, id);
-                    send(new_socket, "OK", strlen("OK"), 0);
-                }
-                else
-                    send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
-            }
+            getItems(clientSocket, scrumMaster);
         }
         else
-            send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
+            error(clientSocket, "Not found!");
     }
-    else if (strncmp(client_reply, "DELETE /", 8) == 0)
+    else if (strncmp(req.uri, "/ScrumMasters/", 14) == 0)
     {
-        message = strchr(client_reply, '/') + 1;
-        message = strtok(message, " ");
-
-        if (strlen(message) == sizeMessage - 8)
+        int id = 0;
+        if ((id = findIndex(req)) >= 0 && id < 3)
         {
-            if ((item = strchr(message, '/')) == NULL)
+            if (strcmp(req.method, "GET") == 0)
             {
-                send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);
+                getItemsID(clientSocket, scrumMaster[id]);
+            }
+            else if (strcmp(req.method, "DELETE") == 0)
+            {
+                deleteItemsID(clientSocket, scrumMaster[id]);
+            }
+            else if (strcmp(req.method, "POST") == 0)
+            {
+                postItemsID(clientSocket, req, scrumMaster[id]);
             }
             else
-            {
-                item++;
-                int check = 0;
-
-                message = strtok(message, "/");
-                for (int i = 0; i < strlen(item); i++)
-                {
-                    if (!isdigit(item[i]))
-                        check++;
-                }
-                if (check == 0)
-                {
-                    id = atoi(item);
-                    printf("item = %s, id = %i\n", message, id);
-                    send(new_socket, "OK", strlen("OK"), 0);
-                }
-                else
-                    send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
-            }
+                error(clientSocket, "Not found!");
         }
         else
-            send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
-    }
-    else if (strncmp(client_reply, "POST /", 6) == 0)
-    {
-        message = strchr(client_reply, '/') + 1;
-        message = strtok(message, " ");
-
-        if (strlen(message) == sizeMessage - 6)
-        {
-            if ((item = strchr(message, '/')) == NULL)
-            {
-                send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);
-            }
-            else
-            {
-                item++;
-                int check = 0;
-
-                message = strtok(message, "/");
-                for (int i = 0; i < strlen(item); i++)
-                {
-                    if (!isdigit(item[i]))
-                        check++;
-                }
-                if (check == 0)
-                {
-                    id = atoi(item);
-                    printf("item = %s, id = %i\n", message, id);
-                    postItemsID(new_socket);
-                }
-                else
-                    send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
-            }
-        }
-        else
-            send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
+               error(clientSocket, "Incorrect ID");
     }
     else
-    {
-         send(new_socket, "YOU ARE LOOSER", strlen("YOU ARE LOOSER"), 0);//puts("YOU ARE LOOSER");
-    }
+        error(clientSocket, "Not found!");
 }
 
-void getItems ()
+void error(socket_t * clientSocket, char * str)
 {
+    char buffer[10000] = "";
+    char text[10000] = "";
 
+    sprintf(text, "<Error>%s</Error>\n", str);
+
+    sprintf(buffer,
+            "\nHTTP/1.1 200 OK\n"
+            "Content-Type: text/xml\n"
+            "Content-Length: %i\n"
+            "\n%s", strlen(text), text
+           );
+
+    socket_write_string(clientSocket, buffer);
 }
 
-void getItemsID ()
+void getItems(socket_t * clientSocket, master ** scrumMaster)
 {
+    char buffer[10000] = "";
+    char text[10000] = "";
 
+    strcat(text, "<ScrumMasters>\n");
+
+    for (int i = 0; i < 3; i++)
+    {
+        sprintf(buffer, "   <ScrumMaster>\n      "
+                "<name>%s</name>\n      "
+                "<surname>%s</surname>\n      "
+                "<company year=""%i"">%s</company>\n      "
+                "<date>%s</date>\n      "
+                "<count>%i</count>\n      "
+                "<score>%.1f</score>\n      "
+                "<teams>\n         "
+                "<team>\n            "
+                "<nameTeam>%s</nameTeam>\n            "
+                "<nameProject>%s</nameProject>\n         "
+                "</team>\n      "
+                "</teams>\n   "
+                "</ScrumMaster>\n",
+                getName(scrumMaster[i]), getSurname(scrumMaster[i]), getYear(scrumMaster[i]),
+                getCompany(scrumMaster[i]), getDate(scrumMaster[i]), getCount(scrumMaster[i]), getScore(scrumMaster[i]),
+                getNameTeam(scrumMaster[i]), getNameProject(scrumMaster[i])
+                );
+        strcat(text, buffer);
+    }
+
+    strcat(text, "</ScrumMasters>\n");
+
+    sprintf(buffer,
+            "\nHTTP/1.1 200 OK\n"
+            "Content-Type: text/xml\n"
+            "Content-Length: %i\n"
+            "\n%s", strlen(text), text
+           );
+
+    socket_write_string(clientSocket, buffer);
 }
 
-void deleteItemsID ()
+void getItemsID(socket_t * clientSocket, master * scrumMaster)
 {
+    char buffer[10000] = "";
+    char text[10000] = "";
 
+    sprintf(buffer, "   <ScrumMaster>\n      "
+            "<name>%s</name>\n      "
+            "<surname>%s</surname>\n      "
+            "<company year=""%i"">%s</company>\n      "
+            "<date>%s</date>\n      "
+            "<count>%i</count>\n      "
+            "<score>%.1f</score>\n      "
+            "<teams>\n         "
+            "<team>\n            "
+            "<nameTeam>%s</nameTeam>\n            "
+            "<nameProject>%s</nameProject>\n         "
+            "</team>\n      "
+            "</teams>\n   "
+            "</ScrumMaster>\n",
+            getName(scrumMaster), getSurname(scrumMaster), getYear(scrumMaster),
+            getCompany(scrumMaster), getDate(scrumMaster), getCount(scrumMaster), getScore(scrumMaster),
+            getNameTeam(scrumMaster), getNameProject(scrumMaster)
+            );
+    strcat(text, buffer);
+
+    sprintf(buffer,
+            "\nHTTP/1.1 200 OK\n"
+            "Content-Type: text/xml\n"
+            "Content-Length: %i\n"
+            "\n%s", strlen(text), text
+           );
+
+    socket_write_string(clientSocket, buffer);
 }
 
-void postItemsID (SOCKET new_socket)
+void deleteItemsID(socket_t * clientSocket, master * scrumMaster)
 {
-    char info[50];
-    int countInfo = 0;
+    char buffer[10000] = "";
 
-    char * name;
-    char * surname;
-    char * company;
-    char * year;
-    char * date;
-    char * count;
-    char * score;
+    master_set(scrumMaster, NULL, NULL, NULL, NULL, NULL, NULL, 0);
+    team_set(scrumMaster, NULL, NULL);
 
-    char * nameTeam;
-    char * nameProject;
+    sprintf(buffer,
+            "\nHTTP/1.1 200 OK\n"
+            "Content-Type: text/xml\n"
+            "Content-Length: %i\n"
+            "\n%s\n", strlen("Successfully removed"), "Successfully removed"
+           );
 
-    do
+    socket_write_string(clientSocket, buffer);
+}
+
+void postItemsID(socket_t * clientSocket, http_request_t req, master * scrumMaster)
+{
+    const char * name = http_request_getArg(&req, "name");
+    const char * surname = http_request_getArg(&req, "surname");
+    const char * company = http_request_getArg(&req, "company");
+    const char * year = http_request_getArg(&req, "year");
+    const char * date = http_request_getArg(&req, "date");
+    const char * count = http_request_getArg(&req, "count");
+    const char * score = http_request_getArg(&req, "score");
+    const char * nameTeam = http_request_getArg(&req, "nameTeam");
+    const char * nameProject = http_request_getArg(&req, "nameProject");
+
+    int checkNum = 0;
+    // check year
+    for (int i = 0; i < 4; i++)
     {
-        if (countInfo > 20)
-            send(new_socket, "Error\nScrum Master name:", strlen("Error\nScrum Master name:"), 0);
-        else
-            send(new_socket, "Scrum Master name:", strlen("Scrum Master name:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-        printf("countIfo %i", countInfo);
-        name = info;
+        if (!isdigit(year[i]))
+            checkNum++;
     }
-    while (countInfo > 20);
-
-    countInfo = 0;
-    puts(name);
-
-    do
+    // check date
+    for (int i = 0; i < 4; i++)
     {
-        if (countInfo > 20)
-            send(new_socket, "Error\nScrum Master surname:", strlen("Error\nScrum Master surname:"), 0);
-        else
-            send(new_socket, "Scrum Master surname:", strlen("Scrum Master surname:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        surname = info;
+        if (!isdigit(date[i]))
+            checkNum++;
     }
-    while (countInfo > 20);
-
-    countInfo = 0;
-    puts(surname);
-
-    do
+    if (date[4] != '-')
+        checkNum++;
+    for (int i = 5; i < 7; i++)
     {
-        if (countInfo > 20)
-            send(new_socket, "Error\nCompany name:", strlen("Error\nCompany name:"), 0);
-        else
-            send(new_socket, "Company name:", strlen("Company name:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        company = info;
+        if (!isdigit(date[i]))
+            checkNum++;
     }
-    while (countInfo > 20);
-
-    countInfo = 0;
-    puts(company);
-
-    do
+    if (atoi(date + 5) > 12)
+        checkNum++;
+    if (date[7] != '-')
+        checkNum++;
+    for (int i = 8; i < 10; i++)
     {
-        if (countInfo > 4)
-            send(new_socket, "Error\nYear:", strlen("Error\nYear:"), 0);
-        else
-            send(new_socket, "Year:", strlen("Year:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        year = info;
+        if (!isdigit(date[i]))
+            checkNum++;
     }
-    while (countInfo > 4);
-
-    countInfo = 0;
-    puts(year);
-
-    do
+    if (atoi(date + 8) > 31)
+        checkNum++;
+    // check count
+    for (int i = 0; i < strlen(count); i++)
     {
-        if (countInfo > 10)
-            send(new_socket, "Error\nDate:", strlen("Error\nDate:"), 0);
-        else
-            send(new_socket, "Date:", strlen("Date:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        date = info;
+        if (!isdigit(count[i]))
+            checkNum++;
     }
-    while (countInfo > 10);
-
-    countInfo = 0;
-    puts(date);
-
-    do
+    // check score
+    int countDot = 0;
+    for (int i = 0; i < strlen(score); i++)
     {
-        if (countInfo > 5)
-            send(new_socket, "Error\nCount:", strlen("Error\nCount:"), 0);
-        else
-            send(new_socket, "Count:", strlen("Count:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        count = info;
+        if (!isdigit(score[i]) && score[i] != '.')
+            checkNum++;
+        if (score[i] == '.')
+            countDot++;
     }
-    while (countInfo > 5);
+    if (countDot > 1)
+        checkNum++;
 
-    countInfo = 0;
-    puts(count);
+    if (strlen(name) == 0 || strlen(surname) == 0 || strlen(company) == 0 || strlen(year) != 4 || strlen(date) != 10
+        || strlen(count) == 0 || strlen(score) == 0 || strlen(nameTeam) == 0 || strlen(nameProject) == 0
+        || strlen(name) > 25 || strlen(surname) > 25  || strlen(company) > 25 || strlen(count) > 5
+        || strlen(score) > 5 || strlen(nameTeam) > 25 || strlen(nameProject) > 25
+       )
+       {
+            checkNum++;
+       }
 
-    do
+    if (checkNum == 0)
     {
-        if (countInfo > 10)
-            send(new_socket, "Error\nScore:", strlen("Error\nScore:"), 0);
-        else
-            send(new_socket, "Score:", strlen("Score:"), 0);
+        master_set(scrumMaster, name, surname, company, atoi(year), date, atoi(count), atof(score));
+        team_set(scrumMaster, nameTeam, nameProject);
 
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        score = info;
+        getItemsID(clientSocket, scrumMaster);
     }
-    while (countInfo > 10);
+    else
+        error(clientSocket, "Not found!");
+}
 
-    countInfo = 0;
-    puts(score);
 
-    do
+int findIndex (http_request_t req)
+{
+    char * id = req.uri + 14;
+    int check = 0;
+
+    for (int i = 0; i < strlen(req.uri) - 14; i++)
     {
-        if (countInfo > 20)
-            send(new_socket, "Error\nTeam name:", strlen("Error\nTeam name:"), 0);
-        else
-            send(new_socket, "Team name:", strlen("Team name:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        nameTeam = info;
+        if (!isdigit(id[i]))
+            check++;
     }
-    while (countInfo > 20);
+    if (check == 0)
+        return atoi(id);
+    else
+        return -1;
+}
 
-    countInfo = 0;
-    puts(nameTeam);
 
-    do
-    {
-        if (countInfo > 20)
-            send(new_socket, "Error", strlen("Error"), 0);
-        else
-            send(new_socket, "Project name:", strlen("Project name:"), 0);
-
-        countInfo = recv(new_socket, info, 50, 0);
-        info[countInfo] = '\0';
-
-        nameProject = info;
+http_request_t http_request_parse(const char * const request)
+{
+    http_request_t req;
+    req.form = NULL;
+    req.formLength = 0;
+    // get method
+    ptrdiff_t methodLen = strstr(request, " ") - request;  // find first whitespace
+    memcpy(req.method, request, methodLen);
+    req.method[methodLen] = '\0';
+    // get uri
+    const char * uriStartPtr = request + strlen(req.method) + 1;
+    const char * uriEndPtr = strstr(uriStartPtr, " ");  // find second whitespace
+    ptrdiff_t uriLen = uriEndPtr - uriStartPtr;
+    memcpy(req.uri, uriStartPtr, uriLen);
+    req.uri[uriLen] = '\0';
+    // parse form data
+    const char * bodyStartPtr = strstr(request, "\r\n\r\n") + strlen("\r\n\r\n");
+    const char * cur = bodyStartPtr;
+    const char * pairEndPtr = cur;
+    const char * eqPtr = cur;
+    while (strlen(cur) > 0) {
+        pairEndPtr = strchr(cur, '&');
+        if (NULL == pairEndPtr) {
+            pairEndPtr = cur + strlen(cur);
+        }
+        keyvalue_t kv;
+        // get key
+        eqPtr = strchr(cur, '=');
+        ptrdiff_t keyLen = eqPtr - cur;
+        memcpy(kv.key, cur, keyLen);
+        kv.key[keyLen] = '\0';
+        // get value
+        eqPtr++;
+        ptrdiff_t valueLen = pairEndPtr - eqPtr;
+        memcpy(kv.value, eqPtr, valueLen);
+        kv.value[valueLen] = '\0';
+        // insert key-value pair into request form list
+        req.formLength += 1;
+        req.form = realloc(req.form, sizeof(keyvalue_t) * req.formLength);
+        req.form[req.formLength - 1] = kv;
+        cur = pairEndPtr + ((strlen(pairEndPtr) > 0) ? 1 : 0);
     }
-    while (countInfo > 20);
+    return req;
+}
 
-    puts(nameProject);
+const char * http_request_getArg(http_request_t * self, const char * key)
+{
+    for (int i = 0; i < self->formLength; i++) {
+        if (strcmp(self->form[i].key, key) == 0) {
+            return self->form[i].value;
+        }
+    }
+    return NULL;
+}
+
+const char * keyvalue_toString(keyvalue_t * self)
+{
+    char * str = malloc(sizeof(char) * (strlen(self->key) + strlen(self->value) + 2));
+    sprintf(str, "%s=%s\0", self->key, self->value);
+    return str;
 }

@@ -1,0 +1,6 @@
+curl -XGET 127.0.0.1:5000/ScrumMasters
+curl -XGET 127.0.0.1:5000/ScrumMasters/2
+
+curl -XDELETE 127.0.0.1:5000/ScrumMasters/2
+
+curl -XPOST 127.0.0.1:5000/ScrumMasters/1 -d"name=Ivan&surname=Ivanov&company=Lin&year=1990&date=2001-12-11&count=3&score=3.4&nameTeam=Color&nameProject=Images"
