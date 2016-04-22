@@ -1,0 +1,23 @@
+# depslib dependency file v1.0
+1458408505 source:c:\users\devincube\desktop\repos\codeblocks\lab2dll1\main.cpp
+	"main.h"
+
+1458408499 c:\users\devincube\desktop\repos\codeblocks\lab2dll1\main.h
+	<windows.h>
+	"stack.h"
+
+1458406439 c:\users\devincube\desktop\repos\codeblocks\lab2staticlib\\stack.h
+
+1461053987 source:d:\力\workspace_2\labs\lab2\lab2dll1\main.cpp
+	"main.h"
+
+1461008024 d:\力\workspace_2\labs\lab2\lab2dll1\main.h
+	<windows.h>
+	<stdio.h>
+	"queue.h"
+
+1461007966 d:\力\workspace_2\labs\lab2\lab2staticlib\stack.h
+
+1461009951 d:\力\workspace_2\labs\lab2\lab2staticlib\queue.h
+	<stdio.h>
+
