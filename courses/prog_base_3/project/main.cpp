@@ -10,25 +10,48 @@
 using namespace std;
 using namespace sf;
 
+class Images
+{
+public:             // private
+    int positionX;
+    int positionY;
+    //int originX;
+    //int originY;    // public
+    //String File;
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
+    Images(String file, int positionX = 0, int positionY = 0, int originX = 0, int originY = 0) {
+        //File = file;
+        image.loadFromFile(file);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        //sprite.setOrigin(Vector2f(originX, originY));
+    }
+};
+
 ///////КЛАСС ИГРОКА///////
 class Player
 {
 public:
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
     int x, y, w, h;
 
     int begX, begY;
     int endX, endY;
     int dx, dy;
-
     float angle;
 
-    float speed;    //ускорение (по х и по у), сама скорость
-    int dir;                            //направление (direction) движения игрока
     bool isMove, isSelect;
     float CurrentFrame;
-    Image image;
-    Texture texture;
-    Sprite sprite;
+
+    //float speed;
+    //int dir;
 
     Player(String file, int positionX, int positionY, int width, int height)
     {
@@ -43,236 +66,138 @@ public:
         sprite.setPosition(positionX, positionY);
         sprite.setTextureRect(IntRect(0, 0, w, h));
         sprite.setOrigin(w/2, h/2);
-        dir = -1;
-        speed = 0;
-        dx = 0;
-        dy = 0;
+
         CurrentFrame = 0;
         isMove = false;
         isSelect = false;
+    }
+
+    void update(float time,  int numImage, int posX, int posY)
+    {
+        CurrentFrame += 0.02*time;
+        if (CurrentFrame > 10) CurrentFrame -= 10;
+        sprite.setTextureRect(IntRect(w * int(CurrentFrame), numImage, w, h));
+        sprite.setPosition(posX, posY);
+    }
+
+    void stop()
+    {
+        if (-90 < angle && angle <= 0)
+            sprite.setTextureRect(IntRect(0, 280, w, h));
+        else if (-180 < angle && angle <= -90)
+            sprite.setTextureRect(IntRect(0, 120, w, h));
+        else if (0 < angle && angle <= 90)
+            sprite.setTextureRect(IntRect(0, 200, w, h));
+        else if (90 < angle && angle <= 180)
+            sprite.setTextureRect(IntRect(0, 40, w, h));
     }
 
     void movement(float time)
     {
         if (isSelect)
         {
-            if (x != endX)
+            if (x != endX || y != endY)
             {
                 if (-45 < angle && angle <= 0)
                 {
                     if (x <= begX + abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 280, w, h));
-                        sprite.setPosition(x++, y--);
-                    }
+                        update(time, 280, x++, y--);
                     else if (x <= endX - abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 240, w, h));
-                        sprite.setPosition(x++, y);
-                    }
+                        update(time, 240, x++, y);
                     else if (x <= endX)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 280, w, h));
-                        sprite.setPosition(x++, y--);
-                    }
+                        update(time, 280, x++, y--);
                 }
                 else if (-90 < angle && angle <= -45)
                 {
                     if (y >= begY - abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 280, w, h));
-                        sprite.setPosition(x++, y--);
-                    }
+                        update(time, 280, x++, y--);
                     else if (y >= endY + abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 160, w, h));
-                        sprite.setPosition(x, y--);
-                    }
+                        update(time, 160, x, y--);
                     else if (y >= endY)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 280, w, h));
-                        sprite.setPosition(x++, y--);
-                    }
+                        update(time, 280, x++, y--);
                 }
                 else if (-135 < angle && angle <= -90)
                 {
                     if (y >= begY - abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 120, w, h));
-                        sprite.setPosition(x--, y--);
-                    }
+                        update(time, 120, x--, y--);
                     else if (y >= endY + abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 160, w, h));
-                        sprite.setPosition(x, y--);
-                    }
+                        update(time, 160, x, y--);
                     else if (y >= endY)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 120, w, h));
-                        sprite.setPosition(x--, y--);
-                    }
+                        update(time, 120, x--, y--);
                 }
                 else if (-180 < angle && angle <= -135)
                 {
                     if (x >= begX - abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 120, w, h));
-                        sprite.setPosition(x--, y--);
-                    }
+                        update(time, 120, x--, y--);
                     else if (x >= endX + abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 80, w, h));
-                        sprite.setPosition(x--, y);
-                    }
+                        update(time, 80, x--, y);
                     else if (x >= endX)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 120, w, h));
-                        sprite.setPosition(x--, y--);
-                    }
+                        update(time, 120, x--, y--);
                 }
                 else if (0 < angle && angle <= 45)
                 {
                     if (x <= begX + abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 200, w, h));
-                        sprite.setPosition(x++, y++);
-                    }
+                        update(time, 200, x++, y++);
                     else if (x <= endX - abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 240, w, h));
-                        sprite.setPosition(x++, y);
-                    }
+                        update(time, 240, x++, y);
                     else if (x <= endX)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 200, w, h));
-                        sprite.setPosition(x++, y++);
-                    }
+                        update(time, 200, x++, y++);
                 }
                 else if (45 < angle && angle <= 90)
                 {
                     if (y <= begY + abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 200, w, h));
-                        sprite.setPosition(x++, y++);
-                    }
+                        update(time, 200, x++, y++);
                     else if (y <= endY - abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 0, w, h));
-                        sprite.setPosition(x, y++);
-                    }
+                        update(time, 0, x, y++);
                     else if (y <= endY)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 200, w, h));
-                        sprite.setPosition(x++, y++);
-                    }
+                        update(time, 200, x++, y++);
                 }
                 else if (90 < angle && angle <= 135)
                 {
                     if (y <= begY + abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 40, w, h));
-                        sprite.setPosition(x--, y++);
-                    }
+                        update(time, 40, x--, y++);
                     else if (y <= endY - abs(dx)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 0, w, h));
-                        sprite.setPosition(x, y++);
-                    }
+                        update(time, 0, x, y++);
                     else if (y <= endY)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 40, w, h));
-                        sprite.setPosition(x--, y++);
-                    }
+                        update(time, 40, x--, y++);
                 }
                 else if (135 < angle && angle <= 180)
                 {
                     if (x >= begX - abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 40, w, h));
-                        sprite.setPosition(x--, y++);
-                    }
+                        update(time, 40, x--, y++);
                     else if (x >= endX + abs(dy)/2)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 80, w, h));
-                        sprite.setPosition(x--, y);
-                    }
+                        update(time, 80, x--, y);
                     else if (x >= endX)
-                    {
-                        CurrentFrame += 0.005*time;
-                        if (CurrentFrame > 10) CurrentFrame -= 10;
-                        sprite.setTextureRect(IntRect(w * int(CurrentFrame), 40, w, h));
-                        sprite.setPosition(x--, y++);
-                    }
+                        update(time, 40, x--, y++);
                 }
             }
             else
             {
-                sprite.setTextureRect(IntRect(0, 200, w, h));
+                stop();
                 isSelect = false;
             }
+        }
+        else
+        {
+            stop();
         }
     }
 };
 
-// изменить выбор квадратиком персонажа и кликом мыщки
-// обновить класс игрока
-// добавить функцию перемещения
+// обновить класс игрока:
+// поправить спрайт
+// исправить разность между скоростями по диагонали и по катетам
 
 int main()
 {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
     window.setFramerateLimit(50);
     //menu(window);
 
-    View view(FloatRect(200, 200, 300, 200));
-    view.zoom(1.0f);
+    View view(FloatRect(0, 0, 1366, 768));
+    //view.zoom(3.4f);
 
+    Images map("map.png");
     Player hero("hero_40x40.png", 323, 324, 40, 40);
 
     ////rectangle////
@@ -292,8 +217,7 @@ int main()
     int released_LKM_X;
     int released_LKM_Y;
 
-    float CurrentFrame = 0;
-
+/*
     Vertex lineG[] =
     {
         Vertex(Vector2f(0, 24)),
@@ -458,8 +382,9 @@ int main()
         Vertex(Vector2f(1343, 0)),
         Vertex(Vector2f(1343, 768))
     };
+*/
 
-    while (window.isOpen())
+    while (window.isOpen() && !Keyboard::isKeyPressed(Keyboard::Escape))
     {
         float time = clock.getElapsedTime().asMicroseconds();
         clock.restart();
@@ -548,8 +473,40 @@ int main()
         }
 
 
+
+        if (pos.x > -500 && pos.x < 2000 && pos.y > -500 && pos.y < 1000)
+        {
+            if (pixelPos.x >= 1365) {
+                view.move(0.2*time, 0);
+            }
+            if (pixelPos.y >= 767) {
+                view.move(0, 0.2*time);
+            }
+            if (pixelPos.x <= 0) {
+                view.move(-0.2*time, 0);
+            }
+            if (pixelPos.y <= 0) {
+                view.move(0, -0.2*time);
+            }
+        }
+
         window.clear();
-        //window.setView(view);
+
+        for (int i = 0; i < HEIGHT_MAP; i++)
+        {
+            for (int j = 0; j < WIDTH_MAP; j++)
+            {
+                if (TileMap[i][j] == ' ') map.sprite.setTextureRect(IntRect(0, 0, 32, 32));
+                if (TileMap[i][j] == 's') map.sprite.setTextureRect(IntRect(32, 0, 32, 32));
+                if (TileMap[i][j] == '0') map.sprite.setTextureRect(IntRect(64, 0, 32, 32));
+
+                map.sprite.setPosition(j * 32, i * 32);
+                window.draw(map.sprite);
+            }
+        }
+
+
+        window.setView(view);
         //window.draw(lineG, 38, Lines);
         //window.draw(lineV, 70, Lines);
         window.draw(hero.sprite);
@@ -561,10 +518,7 @@ int main()
     return 0;
 }
 
-
-
-/*
-    void movement(float time)
+/*void movement(float time)
     {
         sprite.setTextureRect(IntRect(200, 0, w, h));
 
