@@ -188,6 +188,10 @@ public:
 // поправить спрайт
 // исправить разность между скоростями по диагонали и по катетам
 
+// скрол карты по диагонали
+// увеличить карту
+// при движении героя сделать остановку на правую кнопку мыши
+
 int main()
 {
     RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
@@ -477,16 +481,16 @@ int main()
         if (pos.x > -500 && pos.x < 2000 && pos.y > -500 && pos.y < 1000)
         {
             if (pixelPos.x >= 1365) {
-                view.move(0.2*time, 0);
+                view.move(0.3*time, 0);
             }
             if (pixelPos.y >= 767) {
-                view.move(0, 0.2*time);
+                view.move(0, 0.3*time);
             }
             if (pixelPos.x <= 0) {
-                view.move(-0.2*time, 0);
+                view.move(-0.3*time, 0);
             }
             if (pixelPos.y <= 0) {
-                view.move(0, -0.2*time);
+                view.move(0, -0.3*time);
             }
         }
 
