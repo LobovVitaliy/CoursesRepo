@@ -64,13 +64,16 @@ public:
         texture.loadFromImage(image);
         sprite.setTexture(texture);
         sprite.setPosition(positionX, positionY);
-        sprite.setTextureRect(IntRect(0, 0, w, h));
+        sprite.setTextureRect(IntRect(0, 200, w, h));
         sprite.setOrigin(w/2, h/2);
 
         CurrentFrame = 0;
         isMove = false;
         isSelect = false;
+
+        angle = 45;
     }
+
 
     void update(float time,  int numImage, int posX, int posY)
     {
@@ -182,19 +185,76 @@ public:
             stop();
         }
     }
+
+
+
+    void mouseLeft() //stop motion
+    {
+        sprite.setColor(Color::White);
+        isSelect = false;
+        isMove = false;
+    }
+
+    void mouseRight(int posX, int posY)
+    {
+        if (isMove == true)
+        {
+            begX = x;
+            begY = y;
+
+            endX = posX;
+            endY = posY;
+
+            dx = endX - begX;
+            dy = endY - begY;
+
+            angle = (180 / M_PI) * atan2(float(dy), float(dx));
+
+            sprite.setColor(Color::White);
+            isMove = false;
+            isSelect = true;
+        }
+    }
+
+    void MRL()
+    {
+        isMove = true;
+        sprite.setColor(Color::Red);
+    }
+
+    void mouseReleasedLeft(int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
+    {
+        if (sprite.getGlobalBounds().contains(posX, posY))
+        {
+            isMove = true;
+            sprite.setColor(Color::Red);
+        }
+        else if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
+                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
+                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
+                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
+                )
+        {
+            isMove = true;
+            sprite.setColor(Color::Red);
+        }
+    }
 };
 
 // обновить класс игрока:
 // поправить спрайт
-// исправить разность между скоростями по диагонали и по катетам
+// исправить разность между скоростями по диагонали и по катетам (не критично!)
 
-// скрол карты по диагонали
+// скрол карты по диагонали (не критично!)
 // увеличить карту
 // при движении героя сделать остановку на правую кнопку мыши
 
+// при остановки не убираеться круг
+// уменьшить радиус круга
+
 int main()
 {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
     window.setFramerateLimit(50);
     //menu(window);
 
@@ -202,7 +262,16 @@ int main()
     //view.zoom(3.4f);
 
     Images map("map.png");
-    Player hero("hero_40x40.png", 323, 324, 40, 40);
+
+    int countH = 7;
+
+    Player * hero = new Player[7]{  {"hero_40x40.png", 270, 250, 40, 40}, {"hero_40x40.png", 320, 250, 40, 40},
+
+                    {"hero_40x40.png", 250, 300, 40, 40}, {"hero_40x40.png", 300, 300, 40, 40}, {"hero_40x40.png", 350, 300, 40, 40},
+
+                                    {"hero_40x40.png", 270, 350, 40, 40}, {"hero_40x40.png", 320, 350, 40, 40}
+                                };
+    int centerH = countH / 2;
 
     ////rectangle////
     RectangleShape rectangle(Vector2f(0, 0));
@@ -220,6 +289,16 @@ int main()
 
     int released_LKM_X;
     int released_LKM_Y;
+
+    ////shape////
+    CircleShape shape(99);
+    shape.setFillColor(Color::Transparent);
+
+    shape.setOrigin(99/2, 99/2);
+    shape.setOutlineThickness(2);
+    shape.setOutlineColor(Color(250, 150, 100));
+
+    bool pressed_shape = false;
 
 /*
     Vertex lineG[] =
@@ -408,34 +487,28 @@ int main()
             {
                 if (event.key.code == Mouse::Left)
                 {
-                    hero.sprite.setColor(Color::White);
-                    pressed_rectangle = true;
-                    hero.isSelect = false;
-                    hero.isMove = false;
+                    for (int i = 0; i < countH; i++) // stop motion
+                        hero[i].mouseLeft();
+                    pressed_shape = false;
 
+                    pressed_rectangle = true;
                     pressed_LKM_X = pos.x;
                     pressed_LKM_Y = pos.y;
                 }
 
                 if (event.key.code == Mouse::Right)
                 {
-                    if (hero.isMove == true)
-                    {
-                        hero.begX = hero.x;
-                        hero.begY = hero.y;
+                    hero[0].mouseRight(pos.x-30, pos.y-50);
+                    hero[1].mouseRight(pos.x+20, pos.y-50);
 
-                        hero.endX = pos.x;
-                        hero.endY = pos.y;
+                    hero[2].mouseRight(pos.x-50, pos.y);
+                    hero[3].mouseRight(pos.x, pos.y);
+                    hero[4].mouseRight(pos.x+50, pos.y);
 
-                        hero.dx = hero.endX - hero.begX;
-                        hero.dy = hero.endY - hero.begY;
+                    hero[5].mouseRight(pos.x-30, pos.y+50);
 
-                        hero.angle = (180 / M_PI) * atan2(float(hero.dy), float(hero.dx));
-                        cout<<hero.angle<<endl;
-                        hero.sprite.setColor(Color::White);
-                        hero.isMove = false;
-                        hero.isSelect = true;
-                    }
+                    hero[6].mouseRight(pos.x+20, pos.y+50);
+
                 }
             }
 
@@ -450,20 +523,373 @@ int main()
                     rectangle.setSize(Vector2f(0, 0));
                     window.display();
 
-                    if (hero.sprite.getGlobalBounds().contains(pos.x, pos.y))
+                    if ( (((pos.x - hero[centerH].x)*(pos.x - hero[centerH].x)) + ((pos.y - hero[centerH].y)*(pos.y - hero[centerH].y))) <= 10000 )
                     {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
+                        for (int i = 0; i < countH; i++)
+                            hero[i].MRL();
+
+                        pressed_shape = true;
                     }
-                    else if (((pressed_LKM_X <= hero.x) && (hero.x <= released_LKM_X) && (pressed_LKM_Y <= hero.y) && (hero.y <= released_LKM_Y))
-                             || ((released_LKM_X <= hero.x) && (hero.x <= pressed_LKM_X) && (released_LKM_Y <= hero.y) && (hero.y <= pressed_LKM_Y))
-                             || ((pressed_LKM_X <= hero.x) && (pressed_LKM_Y >= hero.y) && (released_LKM_X >= hero.x) && (released_LKM_Y <= hero.y))
-                             || ((pressed_LKM_X >= hero.x) && (pressed_LKM_Y <= hero.y) && (released_LKM_X <= hero.x) && (released_LKM_Y >= hero.y))
+                    else if (((pressed_LKM_X <= hero[centerH].x) && (hero[centerH].x <= released_LKM_X) && (pressed_LKM_Y <= hero[centerH].y) && (hero[centerH].y <= released_LKM_Y))
+                             || ((released_LKM_X <= hero[centerH].x) && (hero[centerH].x <= pressed_LKM_X) && (released_LKM_Y <= hero[centerH].y) && (hero[centerH].y <= pressed_LKM_Y))
+                             || ((pressed_LKM_X <= hero[centerH].x) && (pressed_LKM_Y >= hero[centerH].y) && (released_LKM_X >= hero[centerH].x) && (released_LKM_Y <= hero[centerH].y))
+                             || ((pressed_LKM_X >= hero[centerH].x) && (pressed_LKM_Y <= hero[centerH].y) && (released_LKM_X <= hero[centerH].x) && (released_LKM_Y >= hero[centerH].y))
                             )
                     {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
+                        for (int i = 0; i < countH; i++)
+                            hero[i].MRL();
+
+                        pressed_shape = true;
                     }
+                }
+            }
+        }
+
+        for (int i = 0; i < countH; i++)
+            hero[i].movement(time);
+
+
+        if (pressed_rectangle == true)
+        {
+            rectangle.setPosition(pressed_LKM_X, pressed_LKM_Y);
+            rectangle.setSize(Vector2f(pos.x - pressed_LKM_X, pos.y - pressed_LKM_Y));
+        }
+
+        if (pos.x > -1500 && pos.x < 2866 && pos.y > -850 && pos.y < 1618)
+        {
+            if (pixelPos.x >= 1365) {
+                view.move(0.3*time, 0);
+            }
+            if (pixelPos.y >= 767) {
+                view.move(0, 0.3*time);
+            }
+            if (pixelPos.x <= 0) {
+                view.move(-0.3*time, 0);
+            }
+            if (pixelPos.y <= 0) {
+                view.move(0, -0.3*time);
+            }
+        }
+
+        window.clear();
+
+        for (int i = 0; i < HEIGHT_MAP; i++)
+        {
+            for (int j = 0; j < WIDTH_MAP; j++)
+            {
+                if (TileMap[i][j] == ' ') map.sprite.setTextureRect(IntRect(0, 0, 32, 32));
+                if (TileMap[i][j] == 's') map.sprite.setTextureRect(IntRect(32, 0, 32, 32));
+                if (TileMap[i][j] == '0') map.sprite.setTextureRect(IntRect(64, 0, 32, 32));
+
+                map.sprite.setPosition(j * 32, i * 32);
+                window.draw(map.sprite);
+            }
+        }
+
+
+        //window.setView(view);
+        //window.draw(lineG, 38, Lines);
+        //window.draw(lineV, 70, Lines);
+        for (int i = 0; i < countH; i++)
+            window.draw(hero[i].sprite);
+
+        if (pressed_shape == true)
+        {
+            shape.setPosition(hero[centerH].x - 50, hero[centerH].y - 50);
+            window.draw(shape);
+        }
+
+        window.draw(rectangle);
+        window.display();
+    }
+
+    delete [] hero;
+    window.close();
+    return 0;
+}
+
+
+
+
+/*
+///////КЛАСС ИГРОКА///////
+class Player
+{
+public:
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
+    int x, y, w, h;
+
+    int begX, begY;
+    int endX, endY;
+    int dx, dy;
+    float angle;
+
+    bool isMove, isSelect;
+    float CurrentFrame;
+
+    //float speed;
+    //int dir;
+
+    Player(String file, int positionX, int positionY, int width, int height)
+    {
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        image.loadFromFile(file);
+        image.createMaskFromColor(Color::White);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        sprite.setTextureRect(IntRect(0, 0, w, h));
+        sprite.setOrigin(w/2, h/2);
+
+        CurrentFrame = 0;
+        isMove = false;
+        isSelect = false;
+
+        begX = x;
+        begY = y;
+
+    }
+
+    void update(float time,  int numImage, int posX, int posY)
+    {
+        CurrentFrame += 0.02*time;
+        if (CurrentFrame > 10) CurrentFrame -= 10;
+        sprite.setTextureRect(IntRect(w * int(CurrentFrame), numImage, w, h));
+        sprite.setPosition(posX, posY);
+    }
+
+    void stop()
+    {
+        if (-90 < angle && angle <= 0)
+            sprite.setTextureRect(IntRect(0, 280, w, h));
+        else if (-180 < angle && angle <= -90)
+            sprite.setTextureRect(IntRect(0, 120, w, h));
+        else if (0 < angle && angle <= 90)
+            sprite.setTextureRect(IntRect(0, 200, w, h));
+        else if (90 < angle && angle <= 180)
+            sprite.setTextureRect(IntRect(0, 40, w, h));
+    }
+
+    void movement(float time)
+    {
+        if (isSelect)
+        {
+            if (x != endX || y != endY)
+            {
+                if (-45 < angle && angle <= 0)
+                {
+                    if (x <= begX + abs(dy)/2)
+                        update(time, 280, x++, y--);
+                    else if (x <= endX - abs(dy)/2)
+                        update(time, 240, x++, y);
+                    else if (x <= endX)
+                        update(time, 280, x++, y--);
+                }
+                else if (-90 < angle && angle <= -45)
+                {
+                    if (y >= begY - abs(dx)/2)
+                        update(time, 280, x++, y--);
+                    else if (y >= endY + abs(dx)/2)
+                        update(time, 160, x, y--);
+                    else if (y >= endY)
+                        update(time, 280, x++, y--);
+                }
+                else if (-135 < angle && angle <= -90)
+                {
+                    if (y >= begY - abs(dx)/2)
+                        update(time, 120, x--, y--);
+                    else if (y >= endY + abs(dx)/2)
+                        update(time, 160, x, y--);
+                    else if (y >= endY)
+                        update(time, 120, x--, y--);
+                }
+                else if (-180 < angle && angle <= -135)
+                {
+                    if (x >= begX - abs(dy)/2)
+                        update(time, 120, x--, y--);
+                    else if (x >= endX + abs(dy)/2)
+                        update(time, 80, x--, y);
+                    else if (x >= endX)
+                        update(time, 120, x--, y--);
+                }
+                else if (0 < angle && angle <= 45)
+                {
+                    if (x <= begX + abs(dy)/2)
+                        update(time, 200, x++, y++);
+                    else if (x <= endX - abs(dy)/2)
+                        update(time, 240, x++, y);
+                    else if (x <= endX)
+                        update(time, 200, x++, y++);
+                }
+                else if (45 < angle && angle <= 90)
+                {
+                    if (y <= begY + abs(dx)/2)
+                        update(time, 200, x++, y++);
+                    else if (y <= endY - abs(dx)/2)
+                        update(time, 0, x, y++);
+                    else if (y <= endY)
+                        update(time, 200, x++, y++);
+                }
+                else if (90 < angle && angle <= 135)
+                {
+                    if (y <= begY + abs(dx)/2)
+                        update(time, 40, x--, y++);
+                    else if (y <= endY - abs(dx)/2)
+                        update(time, 0, x, y++);
+                    else if (y <= endY)
+                        update(time, 40, x--, y++);
+                }
+                else if (135 < angle && angle <= 180)
+                {
+                    if (x >= begX - abs(dy)/2)
+                        update(time, 40, x--, y++);
+                    else if (x >= endX + abs(dy)/2)
+                        update(time, 80, x--, y);
+                    else if (x >= endX)
+                        update(time, 40, x--, y++);
+                }
+            }
+            else
+            {
+                stop();
+                isSelect = false;
+            }
+        }
+        else
+        {
+            stop();
+        }
+    }
+
+
+    void mouseLeft()
+    {
+        sprite.setColor(Color::White);
+        isSelect = false;
+        isMove = false;
+    }
+
+    void mouseRight(int posX, int posY)
+    {
+        if (isMove == true)
+        {
+            begX = x;
+            begY = y;
+
+            endX = posX;
+            endY = posY;
+
+            dx = endX - begX;
+            dy = endY - begY;
+
+            //angle = (180 / M_PI) * atan2(float(dy), float(dx));
+
+            sprite.setColor(Color::White);
+            isMove = false;
+            isSelect = true;
+        }
+    }
+
+    void mouseReleasedLeft(int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
+    {
+        if (sprite.getGlobalBounds().contains(posX, posY))
+        {
+            isMove = true;
+            sprite.setColor(Color::Red);
+        }
+        else if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
+                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
+                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
+                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
+                )
+        {
+            isMove = true;
+            sprite.setColor(Color::Red);
+        }
+    }
+};
+
+
+int main()
+{
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
+    window.setFramerateLimit(50);
+    //menu(window);
+
+    View view(FloatRect(0, 0, 1366, 768));
+    //view.zoom(3.4f);
+
+    Images map("map.png");
+    Player hero("hero_40x40.png", 323, 324, 40, 40);
+
+    ////rectangle////
+    RectangleShape rectangle(Vector2f(0, 0));
+    rectangle.setSize(Vector2f(0, 0));
+    rectangle.setFillColor(Color::Transparent);
+    rectangle.setOutlineThickness(2);
+    rectangle.setOutlineColor(Color(250, 150, 100));
+
+    Clock clock;
+
+    bool pressed_rectangle = false;
+
+    int pressed_LKM_X;
+    int pressed_LKM_Y;
+
+    int released_LKM_X;
+    int released_LKM_Y;
+
+    while (window.isOpen() && !Keyboard::isKeyPressed(Keyboard::Escape))
+    {
+        float time = clock.getElapsedTime().asMicroseconds();
+        clock.restart();
+        time = time/800;
+
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
+                window.close();
+            }
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    hero.mouseLeft();
+
+                    pressed_rectangle = true;
+                    pressed_LKM_X = pos.x;
+                    pressed_LKM_Y = pos.y;
+                }
+
+                if (event.key.code == Mouse::Right)
+                {
+                    hero.mouseRight(pos.x, pos.y);
+                }
+            }
+
+            if (event.type == Event::MouseButtonReleased)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    released_LKM_X = pos.x;
+                    released_LKM_Y = pos.y;
+
+                    pressed_rectangle = false;
+                    rectangle.setSize(Vector2f(0, 0));
+                    window.display();
+
+                    hero.mouseReleasedLeft(pos.x, pos.y, pressed_LKM_X, pressed_LKM_Y, released_LKM_X, released_LKM_Y);
                 }
             }
         }
@@ -478,7 +904,7 @@ int main()
 
 
 
-        if (pos.x > -500 && pos.x < 2000 && pos.y > -500 && pos.y < 1000)
+        if (pos.x > -1500 && pos.x < 2866 && pos.y > -850 && pos.y < 1618)
         {
             if (pixelPos.x >= 1365) {
                 view.move(0.3*time, 0);
@@ -520,7 +946,8 @@ int main()
 
     window.close();
     return 0;
-}
+}*/
+
 
 /*void movement(float time)
     {
