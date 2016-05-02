@@ -459,11 +459,11 @@ void game(RenderWindow & window)
                 view.move(0, -0.3*time);
                 //miniMap.sprite.setPosition(miniMap.x, miniMap.y -= 0.3*time);
             }
-            window.draw(miniMap.sprite);
+            //window.draw(miniMap.sprite);
         }
 
         window.clear();
-        //window.setView(view);
+        window.setView(view);
         window.draw(background.sprite);
         //window.draw(oz.sprite);
         window.draw(castle.sprite);
@@ -481,11 +481,15 @@ void game(RenderWindow & window)
             window.draw(selection.sprite);
         }
 
+        Vector2i pixelPosWindow = window.getPosition();
+        Vector2f posWindow = window.mapPixelToCoords(pixelPosWindow);
+
+        miniMap.sprite.setPosition(posWindow.x, posWindow.y + 510);
         window.draw(miniMap.sprite);
 
         text.setColor(Color::White);
         text.setString("0");
-        text.setPosition(53, 721);
+        text.setPosition(posWindow.x + 53, posWindow.y + 721);
         window.draw(text);
 
         window.display();
@@ -497,6 +501,7 @@ void game(RenderWindow & window)
 int main()
 {
     RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
+    window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(50);
 
     game(window);
