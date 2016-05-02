@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="Debug" />
+	<File name="comments.cpp" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="8893" topLine="1072" />
+		</Cursor>
+		<Folding>
+			<Collapse line="0" />
+			<Collapse line="16" />
+		</Folding>
+	</File>
+	<File name="done.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11006" topLine="278" />
+		</Cursor>
+	</File>
+	<File name="main.cpp" open="1" top="1" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="11576" topLine="260" />
+		</Cursor>
+		<Folding>
+			<Collapse line="14" />
+			<Collapse line="48" />
+			<Collapse line="368" />
+		</Folding>
+	</File>
+	<File name="map.h" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="1312" topLine="12" />
+		</Cursor>
+	</File>
+</CodeBlocks_layout_file>

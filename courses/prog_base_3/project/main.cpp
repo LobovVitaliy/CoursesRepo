@@ -3,6 +3,32 @@
 #include <iostream>
 #include <cmath>
 
+#include <fstream>
+#include <cstring>
+#include <cstdlib>
+
+using namespace std;
+
+double length(int x1, int y1, int x2, int y2)
+{
+    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+
+void saveMap(int R, int x, int y)
+{
+    ofstream fout("map.txt", std::ios_base::app);
+    fout << "R = " << R << "; x = " << x << "; y = " << y << "\n";
+    fout.close();
+}
+
+void fileMapCleaning()
+{
+	fstream file;
+	file.open("map.txt", ios::out);
+	file << "";
+	file.close();
+}
+
 #include "map.h"
 
 #define MAX_SPEED 0.05
@@ -10,11 +36,15 @@
 using namespace std;
 using namespace sf;
 
+
 class Images
 {
 public:             // private
-    int positionX;
-    int positionY;
+    int x;
+    int y;
+
+    int w;
+    int h;
     //int originX;
     //int originY;    // public
     //String File;
@@ -22,18 +52,469 @@ public:             // private
     Texture texture;
     Sprite sprite;
 
-    Images(String file, int positionX = 0, int positionY = 0, int originX = 0, int originY = 0) {
+    Images(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
+    {
         //File = file;
         image.loadFromFile(file);
         texture.loadFromImage(image);
         sprite.setTexture(texture);
         sprite.setPosition(positionX, positionY);
-        //sprite.setOrigin(Vector2f(originX, originY));
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        sprite.setOrigin(Vector2f(w/2, h/2));
     }
 };
 
+void menu(RenderWindow & window);
+void game(RenderWindow & window);
+void settings(RenderWindow & window);
+
+void menu(RenderWindow & window)
+{
+    Images Background("Background.png");
+    Images NewGame("NewGame.png");
+    Images LoadGame("LoadGame.png");
+    Images SettingsGame("SettingsGame.png");
+    Images QuitGame("QuitGame.png");
+
+    bool isMenu = true;
+    int menuNum = 0;
+
+    while (isMenu)
+    {
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+                window.close();
+        }
+
+        NewGame.sprite.setColor(Color::White);
+        LoadGame.sprite.setColor(Color::White);
+        SettingsGame.sprite.setColor(Color::White);
+        QuitGame.sprite.setColor(Color::White);
+
+        menuNum = 0;
+        //window.clear(Color(129, 181, 221)); // Çà÷åì ?
+
+        if (IntRect(222, 252, 245, 78).contains(Mouse::getPosition(window)))
+        {
+            NewGame.sprite.setColor(Color(230, 100, 200));
+            menuNum = 1;
+        }
+        else if (IntRect(222, 340, 245, 78).contains(Mouse::getPosition(window)))
+        {
+            LoadGame.sprite.setColor(Color(230, 100, 200));
+            menuNum = 2;
+        }
+        else if (IntRect(222, 428, 245, 78).contains(Mouse::getPosition(window)))
+        {
+            SettingsGame.sprite.setColor(Color(230, 100, 200));
+            menuNum = 3;
+        }
+        else if (IntRect(222, 516, 245, 78).contains(Mouse::getPosition(window)))
+        {
+            QuitGame.sprite.setColor(Color(230, 100, 200));
+            menuNum = 4;
+        }
+
+
+        if (Mouse::isButtonPressed(Mouse::Left))
+        {
+            if (menuNum == 1)
+            {
+                game(window);
+            }
+            else if (menuNum == 2)
+            {
+                window.display();
+                while (!Keyboard::isKeyPressed(Keyboard::Escape));
+            }
+            else if (menuNum == 3)
+            {
+                settings(window);
+            }
+            else if (menuNum == 4)
+            {
+                isMenu = false;
+            }
+        }
+
+        window.draw(Background.sprite);
+        window.draw(NewGame.sprite);
+        window.draw(LoadGame.sprite);
+        window.draw(SettingsGame.sprite);
+        window.draw(QuitGame.sprite);
+
+        window.display();
+    }
+}
+
+void settings(RenderWindow & window)
+{
+    Images Settings("Settings.png");
+    Images SettingsBackground("SettingsBackground.png");
+
+    while (!Keyboard::isKeyPressed(Keyboard::Escape))
+    {
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+                window.close();
+        }
+
+        window.draw(SettingsBackground.sprite);
+        window.draw(Settings.sprite);
+        window.display();
+    }
+}
+
+class ImagesBuild
+{
+public:             // private
+    int x;
+    int y;
+
+    int w;
+    int h;
+    //int originX;
+    //int originY;    // public
+    //String File;
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
+    bool isMove = false;
+    bool isCreate = false;
+
+    ImagesBuild(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
+    {
+        //File = file;
+        image.loadFromFile(file);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        sprite.setOrigin(Vector2f(w/2, h/2));
+    }
+};
+
+class Building
+{
+public:
+    ImagesBuild ** building;
+    int maxCount;
+    int index = -1;
+
+    Building(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0)
+    {
+        this->maxCount = maxCount;
+        building = new ImagesBuild* [maxCount];
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            building[i] = new ImagesBuild(file, positionX, positionY, width, height);
+        }
+    }
+
+    ~Building()
+    {
+        for (int i = 0; i < maxCount; i++)
+        {
+            delete building[i];
+        }
+        delete [] building;
+    }
+
+
+    void createAndMove(RenderWindow & window, int posX, int posY)
+    {
+        if (index < maxCount - 1)
+        {
+            index++;
+            building[index]->isMove = true;
+            building[index]->isCreate = true;
+            building[index]->sprite.setPosition(posX, posY);
+            window.draw(building[index]->sprite);
+        }
+    }
+
+    void deleteBuilding()
+    {
+        if(index > -1)
+        {
+            if(building[index]->isMove)
+            {
+                building[index]->isMove = false;
+                building[index]->isCreate = false;
+                index--;
+            }
+        }
+    }
+
+    void build(int Radius, int posX, int posY)
+    {
+        if(index > -1)
+        {
+            building[index]->isMove = false;
+            saveMap(Radius, posX, posY);
+        }
+    }
+
+    void moveAndDraw(RenderWindow & window, int posX, int posY)
+    {
+        for(int i = 0; i < maxCount; i++)
+        {
+            if (building[i]->isCreate)
+            {
+                if (building[i]->isMove)
+                {
+                    building[i]->sprite.setPosition(posX, posY);
+                }
+                window.draw(building[i]->sprite);
+            }
+        }
+    }
+};
+
+void game(RenderWindow & window)
+{
+    //Images map("map.png");
+    //Images oz("Map/OB5.png", 100, 100);
+    Images miniMap("Images/miniMap2.png", 0, 510);
+
+    Building cave("Building/cave.png", 0, 0, 90, 60, 5);
+    Building building("Building/building.png", 0, 0, 95, 88, 5);
+    Building house("Building/house.png", 0, 0, 140, 115, 5);
+    Building fountain("Building/fountain.png", 0, 0, 60, 80, 5);
+    Building tower("Building/tower.png", 0, 0, 75, 105, 5);
+    Building ambar("Building/ambar.png", 0, 0, 165, 134, 5);
+
+    Images background("Images/BGG1.png", -1500, -850);
+    Images castle("Images/CASTLE.png", 683, 384, 300, 268);
+    Images selection("Images/selectionDone.png", 675, 384, 365, 317);//683
+
+    //saveMap(Radius, x, y);Castle
+
+    /*
+    char buffer[50];
+    int R, x, y;
+
+    int posX = 0;
+    int posY = 0;
+    int Radius = 2;
+
+    ifstream fin("map.txt");
+
+    while (fin.good())
+    {
+        fin.getline(buffer, 100);
+
+        char * pointR = strstr(buffer, "R = ");
+        pointR += 4;
+        R = atoi(pointR);
+
+        char * pointX = strstr(buffer, "x = ");
+        pointX += 4;
+        x = atoi(pointX);
+
+        char * pointY = strstr(buffer, "y = ");
+        pointY += 4;
+        y = atoi(pointY);
+
+        if (R + Radius < length(posX, posY, x, y))
+            puts("OK");
+        else
+            puts("NOT OK");
+    }
+
+    fin.close();*/
+
+    Font font;
+    font.loadFromFile("CyrilicOld.ttf");
+    Text text("", font, 20);
+
+    ////shape////
+    /*CircleShape shape(105);
+    shape.setFillColor(Color::Transparent);
+
+    shape.setOrigin(105, 105);
+    shape.setOutlineThickness(2);
+    shape.setOutlineColor(Color(250, 150, 100));*/
+
+    bool pressed_selection = false;
+    int isSelect = 0;
+
+    Clock clock;
+    View view(FloatRect(0, 0, 1366, 768));
+
+    while (!Keyboard::isKeyPressed(Keyboard::Escape))
+    {
+        float time = clock.getElapsedTime().asMicroseconds();
+        clock.restart();
+        time = time/800;
+
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
+                window.close();
+            }
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    isSelect = 0;
+
+                    cave.deleteBuilding();
+                    building.deleteBuilding();
+                    house.deleteBuilding();
+                    fountain.deleteBuilding();
+                    tower.deleteBuilding();
+                    ambar.deleteBuilding();
+
+                    if (pressed_selection == true)
+                    {
+                        if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
+                        {
+                            cave.createAndMove(window, pos.x, pos.y);
+                            isSelect = 1;
+                        }
+                        else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
+                        {
+                            building.createAndMove(window, pos.x, pos.y);
+                            isSelect = 2;
+                        }
+                        else if ( (((pos.x - 819)*(pos.x - 819)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
+                        {
+                            house.createAndMove(window, pos.x, pos.y);
+                            isSelect = 3;
+                        }
+                        else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
+                        {
+                            fountain.createAndMove(window, pos.x, pos.y);
+                            isSelect = 4;
+                        }
+                        else if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
+                        {
+                            tower.createAndMove(window, pos.x, pos.y);
+                            isSelect = 5;
+                        }
+                        else if ( (((pos.x - 531)*(pos.x - 531)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
+                        {
+                            ambar.createAndMove(window, pos.x, pos.y);
+                            isSelect = 6;
+                        }
+
+                        pressed_selection = false;
+                    }
+                    else if ( (((pos.x - 683)*(pos.x - 683)) + ((pos.y - 410)*(pos.y - 410))) <= 11025 )
+                    {
+                        pressed_selection = true;
+                    }
+                }
+                if (event.key.code == Mouse::Right)
+                {
+                    if (isSelect == 1) cave.build(41, pos.x, pos.y);
+                    if (isSelect == 2) building.build(50, pos.x, pos.y);
+                    if (isSelect == 3) house.build(69, pos.x, pos.y);
+                    if (isSelect == 4) fountain.build(42, pos.x, pos.y);
+                    if (isSelect == 5) tower.build(53, pos.x, pos.y);
+                    if (isSelect == 6) ambar.build(84, pos.x, pos.y);
+
+                    isSelect = 0;
+                }
+            }
+        }
+
+        if (pos.x > -1500 && pos.x < 2866 && pos.y > -850 && pos.y < 1618)
+        {
+            if (pixelPos.x >= 1365)
+            {
+                view.move(0.3*time, 0);
+                //miniMap.sprite.setPosition(miniMap.x += 0.3*time, miniMap.y);
+            }
+            if (pixelPos.y >= 767)
+            {
+                view.move(0, 0.3*time);
+                //miniMap.sprite.setPosition(miniMap.x, miniMap.y += 0.3*time);
+            }
+            if (pixelPos.x <= 0)
+            {
+                view.move(-0.3*time, 0);
+                //miniMap.sprite.setPosition(miniMap.x -= 0.3*time, miniMap.y);
+            }
+            if (pixelPos.y <= 0)
+            {
+                view.move(0, -0.3*time);
+                //miniMap.sprite.setPosition(miniMap.x, miniMap.y -= 0.3*time);
+            }
+            window.draw(miniMap.sprite);
+        }
+
+        window.clear();
+        //window.setView(view);
+        window.draw(background.sprite);
+        //window.draw(oz.sprite);
+        window.draw(castle.sprite);
+
+        cave.moveAndDraw(window, pos.x, pos.y);
+        building.moveAndDraw(window, pos.x, pos.y);
+        house.moveAndDraw(window, pos.x, pos.y);
+        fountain.moveAndDraw(window, pos.x, pos.y);
+        tower.moveAndDraw(window, pos.x, pos.y);
+        ambar.moveAndDraw(window, pos.x, pos.y);
+
+
+        if (pressed_selection == true)
+        {
+            window.draw(selection.sprite);
+        }
+
+        window.draw(miniMap.sprite);
+
+        text.setColor(Color::White);
+        text.setString("0");
+        text.setPosition(53, 721);
+        window.draw(text);
+
+        window.display();
+    }
+
+    fileMapCleaning();
+}
+
+int main()
+{
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
+    window.setFramerateLimit(50);
+
+    game(window);
+
+    window.close();
+    return 0;
+}
+
+
+
+
+
+
+
+
+
 ///////ÊËÀÑÑ ÈÃÐÎÊÀ///////
-class Player
+/*class Player
 {
 public:
     Image image;
@@ -202,8 +683,8 @@ public:
             begX = x;
             begY = y;
 
-            endX = posX;
-            endY = posY;
+            //endX = posX;
+            //endY = posY;
 
             dx = endX - begX;
             dy = endY - begY;
@@ -220,6 +701,54 @@ public:
     {
         isMove = true;
         sprite.setColor(Color::Red);
+    }
+
+    bool checkSelect (Player * hero, int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
+    {
+        if ( (((posX - x)*(posX - x)) + ((posY - y)*(posY - y))) <= 10000 )
+        {
+            for (int i = 0; i < 7; i++)
+                hero[i].MRL();
+
+            return true;
+        }
+        else if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
+                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
+                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
+                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
+                )
+        {
+            for (int i = 0; i < 7; i++)
+                hero[i].MRL();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    void positionEnd(Player * hero, int posX, int posY)
+    {
+        hero[0].endX = posX - 30;
+        hero[0].endY = posY - 50;
+
+        hero[1].endX = posX + 20;
+        hero[1].endY = posY - 50;
+
+        hero[2].endX = posX - 50;
+        hero[2].endY = posY;
+
+        hero[3].endX = posX;
+        hero[3].endY = posY;
+
+        hero[4].endX = posX + 50;
+        hero[4].endY = posY;
+
+        hero[5].endX = posX - 30;
+        hero[5].endY = posY + 50;
+
+        hero[6].endX = posX + 20;
+        hero[6].endY = posY + 50;
     }
 
     void mouseReleasedLeft(int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
@@ -264,6 +793,7 @@ int main()
     Images map("map.png");
 
     int countH = 7;
+    int centerH = countH / 2;
 
     Player * hero = new Player[7]{  {"hero_40x40.png", 270, 250, 40, 40}, {"hero_40x40.png", 320, 250, 40, 40},
 
@@ -271,7 +801,6 @@ int main()
 
                                     {"hero_40x40.png", 270, 350, 40, 40}, {"hero_40x40.png", 320, 350, 40, 40}
                                 };
-    int centerH = countH / 2;
 
     ////rectangle////
     RectangleShape rectangle(Vector2f(0, 0));
@@ -300,172 +829,6 @@ int main()
 
     bool pressed_shape = false;
 
-/*
-    Vertex lineG[] =
-    {
-        Vertex(Vector2f(0, 24)),
-        Vertex(Vector2f(1366, 24)),
-
-        Vertex(Vector2f(0, 64)),
-        Vertex(Vector2f(1366, 64)),
-
-        Vertex(Vector2f(0, 104)),
-        Vertex(Vector2f(1366, 104)),
-
-        Vertex(Vector2f(0, 144)),
-        Vertex(Vector2f(1366, 144)),
-
-        Vertex(Vector2f(0, 184)),
-        Vertex(Vector2f(1366, 184)),
-
-        Vertex(Vector2f(0, 224)),
-        Vertex(Vector2f(1366, 224)),
-
-        Vertex(Vector2f(0, 264)),
-        Vertex(Vector2f(1366, 264)),
-
-        Vertex(Vector2f(0, 304)),
-        Vertex(Vector2f(1366, 304)),
-
-        Vertex(Vector2f(0, 344)),
-        Vertex(Vector2f(1366, 344)),
-
-        Vertex(Vector2f(0, 384)),
-        Vertex(Vector2f(1366, 384)),
-
-        Vertex(Vector2f(0, 424)),
-        Vertex(Vector2f(1366, 424)),
-
-        Vertex(Vector2f(0, 464)),
-        Vertex(Vector2f(1366, 464)),
-
-        Vertex(Vector2f(0, 504)),
-        Vertex(Vector2f(1366, 504)),
-
-        Vertex(Vector2f(0, 544)),
-        Vertex(Vector2f(1366, 544)),
-
-        Vertex(Vector2f(0, 584)),
-        Vertex(Vector2f(1366, 584)),
-
-        Vertex(Vector2f(0, 624)),
-        Vertex(Vector2f(1366, 624)),
-
-        Vertex(Vector2f(0, 664)),
-        Vertex(Vector2f(1366, 664)),
-
-        Vertex(Vector2f(0, 704)),
-        Vertex(Vector2f(1366, 704)),
-
-        Vertex(Vector2f(0, 744)),
-        Vertex(Vector2f(1366, 744))
-    };
-
-    Vertex lineV[] =
-    {
-        Vertex(Vector2f(23, 0)),
-        Vertex(Vector2f(23, 768)),
-
-        Vertex(Vector2f(63, 0)),
-        Vertex(Vector2f(63, 768)),
-
-        Vertex(Vector2f(103, 0)),
-        Vertex(Vector2f(103, 768)),
-
-        Vertex(Vector2f(143, 0)),
-        Vertex(Vector2f(143, 768)),
-
-        Vertex(Vector2f(183, 0)),
-        Vertex(Vector2f(183, 768)),
-
-        Vertex(Vector2f(223, 0)),
-        Vertex(Vector2f(223, 768)),
-
-        Vertex(Vector2f(263, 0)),
-        Vertex(Vector2f(263, 768)),
-
-        Vertex(Vector2f(303, 0)),
-        Vertex(Vector2f(303, 768)),
-
-        Vertex(Vector2f(343, 0)),
-        Vertex(Vector2f(343, 768)),
-
-        Vertex(Vector2f(383, 0)),
-        Vertex(Vector2f(383, 768)),
-
-        Vertex(Vector2f(423, 0)),
-        Vertex(Vector2f(423, 768)),
-
-        Vertex(Vector2f(463, 0)),
-        Vertex(Vector2f(463, 768)),
-
-        Vertex(Vector2f(503, 0)),
-        Vertex(Vector2f(503, 768)),
-
-        Vertex(Vector2f(543, 0)),
-        Vertex(Vector2f(543, 768)),
-
-        Vertex(Vector2f(583, 0)),
-        Vertex(Vector2f(583, 768)),
-
-        Vertex(Vector2f(623, 0)),
-        Vertex(Vector2f(623, 768)),
-
-        Vertex(Vector2f(663, 0)),
-        Vertex(Vector2f(663, 768)),
-
-        Vertex(Vector2f(703, 0)),
-        Vertex(Vector2f(703, 768)),
-
-        Vertex(Vector2f(743, 0)),
-        Vertex(Vector2f(743, 768)),
-
-        Vertex(Vector2f(783, 0)),
-        Vertex(Vector2f(783, 768)),
-
-        Vertex(Vector2f(823, 0)),
-        Vertex(Vector2f(823, 768)),
-
-        Vertex(Vector2f(863, 0)),
-        Vertex(Vector2f(863, 768)),
-
-        Vertex(Vector2f(903, 0)),
-        Vertex(Vector2f(903, 768)),
-
-        Vertex(Vector2f(943, 0)),
-        Vertex(Vector2f(943, 768)),
-
-        Vertex(Vector2f(983, 0)),
-        Vertex(Vector2f(983, 768)),
-
-        Vertex(Vector2f(1023, 0)),
-        Vertex(Vector2f(1023, 768)),
-
-        Vertex(Vector2f(1063, 0)),
-        Vertex(Vector2f(1063, 768)),
-
-        Vertex(Vector2f(1103, 0)),
-        Vertex(Vector2f(1103, 768)),
-
-        Vertex(Vector2f(1143, 0)),
-        Vertex(Vector2f(1143, 768)),
-
-        Vertex(Vector2f(1183, 0)),
-        Vertex(Vector2f(1183, 768)),
-
-        Vertex(Vector2f(1223, 0)),
-        Vertex(Vector2f(1223, 768)),
-
-        Vertex(Vector2f(1263, 0)),
-        Vertex(Vector2f(1263, 768)),
-
-        Vertex(Vector2f(1303, 0)),
-        Vertex(Vector2f(1303, 768)),
-
-        Vertex(Vector2f(1343, 0)),
-        Vertex(Vector2f(1343, 768))
-    };
-*/
 
     while (window.isOpen() && !Keyboard::isKeyPressed(Keyboard::Escape))
     {
@@ -489,6 +852,7 @@ int main()
                 {
                     for (int i = 0; i < countH; i++) // stop motion
                         hero[i].mouseLeft();
+
                     pressed_shape = false;
 
                     pressed_rectangle = true;
@@ -498,17 +862,10 @@ int main()
 
                 if (event.key.code == Mouse::Right)
                 {
-                    hero[0].mouseRight(pos.x-30, pos.y-50);
-                    hero[1].mouseRight(pos.x+20, pos.y-50);
+                    hero[0].positionEnd(hero, pos.x, pos.y);
 
-                    hero[2].mouseRight(pos.x-50, pos.y);
-                    hero[3].mouseRight(pos.x, pos.y);
-                    hero[4].mouseRight(pos.x+50, pos.y);
-
-                    hero[5].mouseRight(pos.x-30, pos.y+50);
-
-                    hero[6].mouseRight(pos.x+20, pos.y+50);
-
+                    for (int i = 0; i < countH; i++)
+                        hero[i].mouseRight(pos.x, pos.y);
                 }
             }
 
@@ -523,24 +880,8 @@ int main()
                     rectangle.setSize(Vector2f(0, 0));
                     window.display();
 
-                    if ( (((pos.x - hero[centerH].x)*(pos.x - hero[centerH].x)) + ((pos.y - hero[centerH].y)*(pos.y - hero[centerH].y))) <= 10000 )
-                    {
-                        for (int i = 0; i < countH; i++)
-                            hero[i].MRL();
-
-                        pressed_shape = true;
-                    }
-                    else if (((pressed_LKM_X <= hero[centerH].x) && (hero[centerH].x <= released_LKM_X) && (pressed_LKM_Y <= hero[centerH].y) && (hero[centerH].y <= released_LKM_Y))
-                             || ((released_LKM_X <= hero[centerH].x) && (hero[centerH].x <= pressed_LKM_X) && (released_LKM_Y <= hero[centerH].y) && (hero[centerH].y <= pressed_LKM_Y))
-                             || ((pressed_LKM_X <= hero[centerH].x) && (pressed_LKM_Y >= hero[centerH].y) && (released_LKM_X >= hero[centerH].x) && (released_LKM_Y <= hero[centerH].y))
-                             || ((pressed_LKM_X >= hero[centerH].x) && (pressed_LKM_Y <= hero[centerH].y) && (released_LKM_X <= hero[centerH].x) && (released_LKM_Y >= hero[centerH].y))
-                            )
-                    {
-                        for (int i = 0; i < countH; i++)
-                            hero[i].MRL();
-
-                        pressed_shape = true;
-                    }
+                    if(hero[centerH].checkSelect(hero, pos.x, pos.y, pressed_LKM_X, pressed_LKM_Y, released_LKM_X, released_LKM_Y) == true)
+                       pressed_shape = true;
                 }
             }
         }
@@ -586,7 +927,6 @@ int main()
             }
         }
 
-
         //window.setView(view);
         //window.draw(lineG, 38, Lines);
         //window.draw(lineV, 70, Lines);
@@ -606,13 +946,10 @@ int main()
     delete [] hero;
     window.close();
     return 0;
-}
+}*/
 
 
-
-
-/*
-///////ÊËÀÑÑ ÈÃÐÎÊÀ///////
+/*///////ÊËÀÑÑ ÈÃÐÎÊÀ///////
 class Player
 {
 public:
