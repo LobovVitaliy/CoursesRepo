@@ -189,6 +189,7 @@ public:             // private
 
     bool isMove = false;
     bool isCreate = false;
+    bool isLive = false;
 
     ImagesBuild(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
     {
@@ -238,6 +239,7 @@ public:
         if (index < maxCount - 1)
         {
             index++;
+            building[index]->isLive = true;
             building[index]->isMove = true;
             building[index]->isCreate = true;
             building[index]->sprite.setPosition(posX, posY);
@@ -258,24 +260,61 @@ public:
         }
     }
 
-    void build(int Radius, int posX, int posY)
+    bool build(int Radius, int posX, int posY)
     {
         if(index > -1)
         {
-            building[index]->isMove = false;
-            saveMap(Radius, posX, posY);
+            if(building[index]->isLive)
+            {
+                building[index]->isMove = false;
+                saveMap(Radius, posX, posY);
+                return true;
+            }
         }
+        return false;
     }
 
-    void moveAndDraw(RenderWindow & window, int posX, int posY)
+    void moveAndDraw(RenderWindow & window, int Radius, int posX, int posY)
     {
+        char buffer[50];
+        int R, x, y;
+
         for(int i = 0; i < maxCount; i++)
         {
             if (building[i]->isCreate)
             {
-                if (building[i]->isMove)
+                if (building[index]->isMove)
                 {
-                    building[i]->sprite.setPosition(posX, posY);
+                    building[index]->sprite.setPosition(posX, posY);
+
+                    ifstream fin("map.txt");
+                    while (fin.getline(buffer, 50))
+                    {
+                        char * pointR = strstr(buffer, "R = ");
+                        pointR += 4;
+                        R = atoi(pointR);
+
+                        char * pointX = strstr(buffer, "x = ");
+                        pointX += 4;
+                        x = atoi(pointX);
+
+                        char * pointY = strstr(buffer, "y = ");
+                        pointY += 4;
+                        y = atoi(pointY);
+
+                        if (R + Radius < length(posX, posY, x, y))
+                        {
+                            building[index]->sprite.setColor(Color::White);
+                            building[index]->isLive = true;
+                        }
+                        else
+                        {
+                            building[index]->sprite.setColor(Color::Red);
+                            building[index]->isLive = false;
+                            break;
+                        }
+                    }
+                    fin.close();
                 }
                 window.draw(building[i]->sprite);
             }
@@ -285,6 +324,8 @@ public:
 
 void game(RenderWindow & window)
 {
+    fileMapCleaning();
+
     //Images map("map.png");
     //Images oz("Map/OB5.png", 100, 100);
     Images miniMap("Images/miniMap2.png", 0, 510);
@@ -297,54 +338,20 @@ void game(RenderWindow & window)
     Building ambar("Building/ambar.png", 0, 0, 165, 134, 5);
 
     Images background("Images/BGG1.png", -1500, -850);
-    Images castle("Images/CASTLE.png", 683, 384, 300, 268);
+    Images castle("Images/CastleNew.png", 683, 384, 250, 268);
     Images selection("Images/selectionDone.png", 675, 384, 365, 317);//683
 
-    //saveMap(Radius, x, y);Castle
-
-    /*
-    char buffer[50];
-    int R, x, y;
-
-    int posX = 0;
-    int posY = 0;
-    int Radius = 2;
-
-    ifstream fin("map.txt");
-
-    while (fin.good())
-    {
-        fin.getline(buffer, 100);
-
-        char * pointR = strstr(buffer, "R = ");
-        pointR += 4;
-        R = atoi(pointR);
-
-        char * pointX = strstr(buffer, "x = ");
-        pointX += 4;
-        x = atoi(pointX);
-
-        char * pointY = strstr(buffer, "y = ");
-        pointY += 4;
-        y = atoi(pointY);
-
-        if (R + Radius < length(posX, posY, x, y))
-            puts("OK");
-        else
-            puts("NOT OK");
-    }
-
-    fin.close();*/
+    saveMap(135, 683, 384);
 
     Font font;
     font.loadFromFile("CyrilicOld.ttf");
     Text text("", font, 20);
 
     ////shape////
-    /*CircleShape shape(105);
+    /*CircleShape shape(135);
     shape.setFillColor(Color::Transparent);
 
-    shape.setOrigin(105, 105);
+    shape.setOrigin(135, 135);
     shape.setOutlineThickness(2);
     shape.setOutlineColor(Color(250, 150, 100));*/
 
@@ -425,14 +432,12 @@ void game(RenderWindow & window)
                 }
                 if (event.key.code == Mouse::Right)
                 {
-                    if (isSelect == 1) cave.build(41, pos.x, pos.y);
-                    if (isSelect == 2) building.build(50, pos.x, pos.y);
-                    if (isSelect == 3) house.build(69, pos.x, pos.y);
-                    if (isSelect == 4) fountain.build(42, pos.x, pos.y);
-                    if (isSelect == 5) tower.build(53, pos.x, pos.y);
-                    if (isSelect == 6) ambar.build(84, pos.x, pos.y);
-
-                    isSelect = 0;
+                    if (isSelect == 1) if (cave.build(41, pos.x, pos.y)) isSelect = 0;
+                    if (isSelect == 2) if (building.build(50, pos.x, pos.y)) isSelect = 0;
+                    if (isSelect == 3) if (house.build(69, pos.x, pos.y)) isSelect = 0;
+                    if (isSelect == 4) if (fountain.build(42, pos.x, pos.y)) isSelect = 0;
+                    if (isSelect == 5) if (tower.build(53, pos.x, pos.y)) isSelect = 0;
+                    if (isSelect == 6) if (ambar.build(84, pos.x, pos.y)) isSelect = 0;
                 }
             }
         }
@@ -442,24 +447,19 @@ void game(RenderWindow & window)
             if (pixelPos.x >= 1365)
             {
                 view.move(0.3*time, 0);
-                //miniMap.sprite.setPosition(miniMap.x += 0.3*time, miniMap.y);
             }
             if (pixelPos.y >= 767)
             {
                 view.move(0, 0.3*time);
-                //miniMap.sprite.setPosition(miniMap.x, miniMap.y += 0.3*time);
             }
             if (pixelPos.x <= 0)
             {
                 view.move(-0.3*time, 0);
-                //miniMap.sprite.setPosition(miniMap.x -= 0.3*time, miniMap.y);
             }
             if (pixelPos.y <= 0)
             {
                 view.move(0, -0.3*time);
-                //miniMap.sprite.setPosition(miniMap.x, miniMap.y -= 0.3*time);
             }
-            //window.draw(miniMap.sprite);
         }
 
         window.clear();
@@ -468,12 +468,12 @@ void game(RenderWindow & window)
         //window.draw(oz.sprite);
         window.draw(castle.sprite);
 
-        cave.moveAndDraw(window, pos.x, pos.y);
-        building.moveAndDraw(window, pos.x, pos.y);
-        house.moveAndDraw(window, pos.x, pos.y);
-        fountain.moveAndDraw(window, pos.x, pos.y);
-        tower.moveAndDraw(window, pos.x, pos.y);
-        ambar.moveAndDraw(window, pos.x, pos.y);
+        cave.moveAndDraw(window, 41, pos.x, pos.y);
+        building.moveAndDraw(window, 50, pos.x, pos.y);
+        house.moveAndDraw(window, 69, pos.x, pos.y);
+        fountain.moveAndDraw(window, 42, pos.x, pos.y);
+        tower.moveAndDraw(window, 53, pos.x, pos.y);
+        ambar.moveAndDraw(window, 84, pos.x, pos.y);
 
 
         if (pressed_selection == true)
@@ -494,13 +494,11 @@ void game(RenderWindow & window)
 
         window.display();
     }
-
-    fileMapCleaning();
 }
 
 int main()
 {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(50);
 
