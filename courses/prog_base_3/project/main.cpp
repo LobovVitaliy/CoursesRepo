@@ -23,10 +23,10 @@ void saveMap(int R, int x, int y)
 
 void fileMapCleaning()
 {
-	fstream file;
-	file.open("map.txt", ios::out);
-	file << "";
-	file.close();
+    fstream file;
+    file.open("map.txt", ios::out);
+    file << "";
+    file.close();
 }
 
 #include "map.h"
@@ -212,10 +212,12 @@ public:
     ImagesBuild ** building;
     int maxCount;
     int index = -1;
+    int coints = 0;
 
-    Building(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0)
+    Building(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coints = 0)
     {
         this->maxCount = maxCount;
+        this->coints = coints;
         building = new ImagesBuild* [maxCount];
 
         for(int i = 0; i < maxCount; i++)
@@ -320,6 +322,16 @@ public:
             }
         }
     }
+
+    int getCoints()
+    {
+        return coints * (index + 1);
+    }
+
+    int getIndex()
+    {
+        return index;
+    }
 };
 
 void game(RenderWindow & window)
@@ -330,16 +342,23 @@ void game(RenderWindow & window)
     //Images oz("Map/OB5.png", 100, 100);
     Images miniMap("Images/miniMap2.png", 0, 510);
 
-    Building cave("Building/cave.png", 0, 0, 90, 60, 5);
-    Building building("Building/building.png", 0, 0, 95, 88, 5);
-    Building house("Building/house.png", 0, 0, 140, 115, 5);
+    Building cave("Building/cave.png", 0, 0, 90, 60, 5, 25);
+    Building building("Building/building.png", 0, 0, 95, 88, 5, 50);
+    Building house("Building/house.png", 0, 0, 140, 115, 5, 10);
     Building fountain("Building/fountain.png", 0, 0, 60, 80, 5);
     Building tower("Building/tower.png", 0, 0, 75, 105, 5);
-    Building ambar("Building/ambar.png", 0, 0, 165, 134, 5);
+    Building ambar("Building/ambar.png", 0, 0, 165, 134, 5, 10);
 
     Images background("Images/BGG1.png", -1500, -850);
     Images castle("Images/CastleNew.png", 683, 384, 250, 268);
-    Images selection("Images/selectionDone.png", 675, 384, 365, 317);//683
+    Images selection("Images/selection.png", 675, 384, 365, 317);//683
+
+    Images selectionNot1("Images/selectionNot.png", 603, 266, 70, 72);
+    Images selectionNot2("Images/selectionNot.png", 747, 266, 70, 72);
+    Images selectionNot3("Images/selectionNot.png", 819, 384, 70, 72);
+    Images selectionNot4("Images/selectionNot.png", 747, 504, 70, 72);
+    Images selectionNot5("Images/selectionNot.png", 603, 504, 70, 72);
+    Images selectionNot6("Images/selectionNot.png", 533, 384, 70, 72);
 
     saveMap(135, 683, 384);
 
@@ -358,7 +377,12 @@ void game(RenderWindow & window)
     bool pressed_selection = false;
     int isSelect = 0;
 
+    char money[10] = "0";
+    int coins = 0;
+
     Clock clock;
+    Clock clockTimer;
+    float timer = 0;
     View view(FloatRect(0, 0, 1366, 768));
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
@@ -366,6 +390,15 @@ void game(RenderWindow & window)
         float time = clock.getElapsedTime().asMicroseconds();
         clock.restart();
         time = time/800;
+
+        timer += clockTimer.getElapsedTime().asSeconds();
+        if(timer > 2000)
+        {
+            if(coins < 1000000000) coins += 10 + cave.getCoints() + building.getCoints() + house.getCoints() + ambar.getCoints();
+            sprintf(money, "%i", coins);
+            timer = 0;
+            clockTimer.restart();
+        }
 
         Vector2i pixelPos = Mouse::getPosition(window);
         Vector2f pos = window.mapPixelToCoords(pixelPos);
@@ -394,33 +427,51 @@ void game(RenderWindow & window)
                     {
                         if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
                         {
-                            cave.createAndMove(window, pos.x, pos.y);
-                            isSelect = 1;
+                            if(coins >= 50)
+                            {
+                                cave.createAndMove(window, pos.x, pos.y);
+                                isSelect = 1;
+                            }
                         }
                         else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
                         {
-                            building.createAndMove(window, pos.x, pos.y);
-                            isSelect = 2;
+                            if(coins >= 250)
+                            {
+                                building.createAndMove(window, pos.x, pos.y);
+                                isSelect = 2;
+                            }
                         }
                         else if ( (((pos.x - 819)*(pos.x - 819)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
                         {
-                            house.createAndMove(window, pos.x, pos.y);
-                            isSelect = 3;
+                            if(coins >= 250)
+                            {
+                                house.createAndMove(window, pos.x, pos.y);
+                                isSelect = 3;
+                            }
                         }
                         else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
                         {
-                            fountain.createAndMove(window, pos.x, pos.y);
-                            isSelect = 4;
+                            if(coins >= 1000)
+                            {
+                                fountain.createAndMove(window, pos.x, pos.y);
+                                isSelect = 4;
+                            }
                         }
                         else if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
                         {
-                            tower.createAndMove(window, pos.x, pos.y);
-                            isSelect = 5;
+                            if(coins >= 1000)
+                            {
+                                tower.createAndMove(window, pos.x, pos.y);
+                                isSelect = 5;
+                            }
                         }
                         else if ( (((pos.x - 531)*(pos.x - 531)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
                         {
-                            ambar.createAndMove(window, pos.x, pos.y);
-                            isSelect = 6;
+                            if(coins >= 450)
+                            {
+                                ambar.createAndMove(window, pos.x, pos.y);
+                                isSelect = 6;
+                            }
                         }
 
                         pressed_selection = false;
@@ -432,12 +483,60 @@ void game(RenderWindow & window)
                 }
                 if (event.key.code == Mouse::Right)
                 {
-                    if (isSelect == 1) if (cave.build(41, pos.x, pos.y)) isSelect = 0;
-                    if (isSelect == 2) if (building.build(50, pos.x, pos.y)) isSelect = 0;
-                    if (isSelect == 3) if (house.build(69, pos.x, pos.y)) isSelect = 0;
-                    if (isSelect == 4) if (fountain.build(42, pos.x, pos.y)) isSelect = 0;
-                    if (isSelect == 5) if (tower.build(53, pos.x, pos.y)) isSelect = 0;
-                    if (isSelect == 6) if (ambar.build(84, pos.x, pos.y)) isSelect = 0;
+                    if (isSelect == 1)
+                    {
+                        if (cave.build(41, pos.x, pos.y))
+                        {
+                            isSelect = 0;
+                            coins -= 50;
+                            sprintf(money, "%i", coins);
+                        }
+                    }
+                    if (isSelect == 2)
+                    {
+                        if (building.build(50, pos.x, pos.y))
+                        {
+                            isSelect = 0;
+                            coins -= 250;
+                            sprintf(money, "%i", coins);
+                        }
+                    }
+                    if (isSelect == 3)
+                    {
+                        if (house.build(69, pos.x, pos.y))
+                        {
+                            isSelect = 0;
+                            coins -= 250;
+                            sprintf(money, "%i", coins);
+                        }
+                    }
+                    if (isSelect == 4)
+                    {
+                        if (fountain.build(42, pos.x, pos.y))
+                        {
+                            isSelect = 0;
+                            coins -= 1000;
+                            sprintf(money, "%i", coins);
+                        }
+                    }
+                    if (isSelect == 5)
+                    {
+                        if (tower.build(53, pos.x, pos.y))
+                        {
+                            isSelect = 0;
+                            coins -= 1000;
+                            sprintf(money, "%i", coins);
+                        }
+                    }
+                    if (isSelect == 6)
+                    {
+                        if (ambar.build(84, pos.x, pos.y))
+                        {
+                            isSelect = 0;
+                            coins -= 450;
+                            sprintf(money, "%i", coins);
+                        }
+                    }
                 }
             }
         }
@@ -463,7 +562,7 @@ void game(RenderWindow & window)
         }
 
         window.clear();
-        window.setView(view);
+        //window.setView(view);
         window.draw(background.sprite);
         //window.draw(oz.sprite);
         window.draw(castle.sprite);
@@ -479,6 +578,72 @@ void game(RenderWindow & window)
         if (pressed_selection == true)
         {
             window.draw(selection.sprite);
+
+            if(cave.getIndex() == 4)
+            {
+                selectionNot1.sprite.setColor(Color::Black);
+                window.draw(selectionNot1.sprite);
+            }
+            else if(coins < 50)
+            {
+                selectionNot1.sprite.setColor(Color::White);
+                window.draw(selectionNot1.sprite);
+            }
+
+            if(building.getIndex() == 4)
+            {
+                selectionNot2.sprite.setColor(Color::Black);
+                window.draw(selectionNot2.sprite);
+            }
+            else if(coins < 250)
+            {
+                selectionNot2.sprite.setColor(Color::White);
+                window.draw(selectionNot2.sprite);
+            }
+
+            if(house.getIndex() == 4)
+            {
+                selectionNot3.sprite.setColor(Color::Black);
+                window.draw(selectionNot3.sprite);
+            }
+            else if(coins < 250)
+            {
+                selectionNot3.sprite.setColor(Color::White);
+                window.draw(selectionNot3.sprite);
+            }
+
+            if(fountain.getIndex() == 4)
+            {
+                selectionNot4.sprite.setColor(Color::Black);
+                window.draw(selectionNot4.sprite);
+            }
+            else if(coins < 1000)
+            {
+                selectionNot4.sprite.setColor(Color::White);
+                window.draw(selectionNot4.sprite);
+            }
+
+            if(tower.getIndex() == 4)
+            {
+                selectionNot5.sprite.setColor(Color::Black);
+                window.draw(selectionNot5.sprite);
+            }
+            else if(coins < 1000)
+            {
+                selectionNot5.sprite.setColor(Color::White);
+                window.draw(selectionNot5.sprite);
+            }
+
+            if(ambar.getIndex() == 4)
+            {
+                selectionNot6.sprite.setColor(Color::Black);
+                window.draw(selectionNot6.sprite);
+            }
+            else if(coins < 450)
+            {
+                selectionNot6.sprite.setColor(Color::White);
+                window.draw(selectionNot6.sprite);
+            }
         }
 
         Vector2i pixelPosWindow = window.getPosition();
@@ -488,7 +653,7 @@ void game(RenderWindow & window)
         window.draw(miniMap.sprite);
 
         text.setColor(Color::White);
-        text.setString("0");
+        text.setString(money);
         text.setPosition(posWindow.x + 53, posWindow.y + 721);
         window.draw(text);
 
@@ -498,7 +663,7 @@ void game(RenderWindow & window)
 
 int main()
 {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(50);
 
