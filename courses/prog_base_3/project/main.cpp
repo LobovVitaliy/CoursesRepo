@@ -180,6 +180,8 @@ public:             // private
 
     int w;
     int h;
+
+    int R = 0;
     //int originX;
     //int originY;    // public
     //String File;
@@ -202,7 +204,17 @@ public:             // private
         y = positionY;
         w = width;
         h = height;
+        isMove = false;
+        isCreate = false;
+        isLive = false;
         sprite.setOrigin(Vector2f(w/2, h/2));
+    }
+
+    void setPosition(int Radius, int posX, int posY)
+    {
+        R = Radius;
+        x = posX;
+        y = posY;
     }
 };
 
@@ -210,6 +222,7 @@ class Building
 {
 public:
     ImagesBuild ** building;
+
     int maxCount;
     int index = -1;
     int coints = 0;
@@ -236,6 +249,36 @@ public:
     }
 
 
+    int checkPosition(int posX, int posY)
+    {
+        for(int i = 0; i < maxCount; i++)
+        {
+            if ( (((posX - building[i]->x)*(posX - building[i]->x)) + ((posY - building[i]->y)*(posY - building[i]->y))) <= (building[i]->R)*(building[i]->R) )
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    int getX(int i)
+    {
+        if (building[i]->isLive)
+            return building[i]->x;
+        else
+            return 5000;
+    }
+
+    int getY(int i)
+    {
+        if (building[i]->isLive)
+            return building[i]->y;
+        else
+            return 5000;
+    }
+
+
+
     void createAndMove(RenderWindow & window, int posX, int posY)
     {
         if (index < maxCount - 1)
@@ -247,6 +290,94 @@ public:
             building[index]->sprite.setPosition(posX, posY);
             window.draw(building[index]->sprite);
         }
+    }
+
+    void deleteBuildingIndex(int indexBuilding)
+    {
+        int RM, xM, yM;
+
+        const int len = 50, strings = 50;
+        int countStr = 0;
+        int delIndex = 0;
+        char buffer[len][strings];
+
+        ifstream fs("map.txt", ios::in | ios::binary);
+        while (fs.getline(buffer[countStr], 50))
+        {
+            char * pointR = strstr(buffer[countStr], "R = ");
+            pointR += 4;
+            RM = atoi(pointR);
+
+            char * pointX = strstr(buffer[countStr], "x = ");
+            pointX += 4;
+            xM = atoi(pointX);
+
+            char * pointY = strstr(buffer[countStr], "y = ");
+            pointY += 4;
+            yM = atoi(pointY);
+
+            if(building[indexBuilding]->R == RM && building[indexBuilding]->x == xM && building[indexBuilding]->y == yM)
+            {
+                delIndex = countStr;
+            }
+            countStr++;
+        }
+        fs.close();
+
+        fileMapCleaning();
+
+        ofstream fout("map.txt", std::ios_base::app);
+        for(int k = 0; k < countStr; k++)
+        {
+            if(k != delIndex) fout << buffer[k] << "\n";
+        }
+        fout.close();
+
+        int x, y, w, h, R;
+        bool isMove, isCreate, isLive;
+
+        Image image;
+        Texture texture;
+        Sprite sprite;
+
+        for(int i = indexBuilding; i < index; i++)
+        {
+            ////////////////////////////////////////////
+            x = building[i + 1]->x;
+            y = building[i + 1]->y;
+            w = building[i + 1]->w;
+            h = building[i + 1]->h;
+            R = building[i + 1]->R;
+
+            image = building[i + 1]->image;
+            texture = building[i + 1]->texture;
+            sprite = building[i + 1]->sprite;
+
+            isCreate = building[i + 1]->isCreate;
+            isLive = building[i + 1]->isLive;
+            isMove = building[i + 1]->isMove;
+
+            ////////////////////////////////////////////
+            building[i]->x = x;
+            building[i]->y = y;
+            building[i]->w = w;
+            building[i]->h = h;
+            building[i]->R = R;
+
+            building[i]->image = image;
+            building[i]->texture = texture;
+            building[i]->sprite = sprite;
+
+            building[i]->isCreate = isCreate;
+            building[i]->isLive = isLive;
+            building[i]->isMove = isMove;
+        }
+
+        building[index]->isCreate = false;
+        building[index]->isLive = false;
+        building[index]->isMove = false;
+
+        index--;
     }
 
     void deleteBuilding()
@@ -269,6 +400,7 @@ public:
             if(building[index]->isLive)
             {
                 building[index]->isMove = false;
+                building[index]->setPosition(Radius, posX, posY);
                 saveMap(Radius, posX, posY);
                 return true;
             }
@@ -351,7 +483,7 @@ void game(RenderWindow & window)
 
     Images background("Images/BGG1.png", -1500, -850);
     Images castle("Images/CastleNew.png", 683, 384, 250, 268);
-    Images selection("Images/selection.png", 675, 384, 365, 317);//683
+    Images selection("Images/selection.png", 675, 384, 365, 317);//683->675
 
     Images selectionNot1("Images/selectionNot.png", 603, 266, 70, 72);
     Images selectionNot2("Images/selectionNot.png", 747, 266, 70, 72);
@@ -359,6 +491,14 @@ void game(RenderWindow & window)
     Images selectionNot4("Images/selectionNot.png", 747, 504, 70, 72);
     Images selectionNot5("Images/selectionNot.png", 603, 504, 70, 72);
     Images selectionNot6("Images/selectionNot.png", 533, 384, 70, 72);
+
+    Images selection2("Images/selection2Update.png", 0, 0, 64, 164);//80->64
+    int indexCave = -1;
+    int indexBuilding = -1;
+    int indexHouse = -1;
+    int indexFountain = -1;
+    int indexTower = -1;
+    int indexAmbar = -1;
 
     saveMap(135, 683, 384);
 
@@ -374,11 +514,12 @@ void game(RenderWindow & window)
     shape.setOutlineThickness(2);
     shape.setOutlineColor(Color(250, 150, 100));*/
 
+    bool pressed_selection_building = false;
     bool pressed_selection = false;
     int isSelect = 0;
 
     char money[10] = "0";
-    int coins = 0;
+    int coins = 110;
 
     Clock clock;
     Clock clockTimer;
@@ -392,7 +533,7 @@ void game(RenderWindow & window)
         time = time/800;
 
         timer += clockTimer.getElapsedTime().asSeconds();
-        if(timer > 2000)
+        if(timer > 200)//2000
         {
             if(coins < 1000000000) coins += 10 + cave.getCoints() + building.getCoints() + house.getCoints() + ambar.getCoints();
             sprintf(money, "%i", coins);
@@ -414,6 +555,9 @@ void game(RenderWindow & window)
             {
                 if (event.key.code == Mouse::Left)
                 {
+                    pressed_selection_building = true;
+
+                    // Сброс обьекта который нажат
                     isSelect = 0;
 
                     cave.deleteBuilding();
@@ -423,6 +567,7 @@ void game(RenderWindow & window)
                     tower.deleteBuilding();
                     ambar.deleteBuilding();
 
+                    // Выбор обьекта который нажат
                     if (pressed_selection == true)
                     {
                         if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
@@ -475,14 +620,144 @@ void game(RenderWindow & window)
                         }
 
                         pressed_selection = false;
+                        pressed_selection_building = false;
                     }
                     else if ( (((pos.x - 683)*(pos.x - 683)) + ((pos.y - 410)*(pos.y - 410))) <= 11025 )
                     {
                         pressed_selection = true;
                     }
+
+                    if(pressed_selection_building  == true)
+                    {
+                        if (indexCave != -1)
+                        {
+                            if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) - 50))*(pos.y - (cave.getY(indexCave) - 50)))) <= 950 )
+                            {
+                                puts("1");
+                            }
+                            else if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) + 50))*(pos.y - (cave.getY(indexCave) + 50)))) <= 950 )
+                            {
+                                cave.deleteBuildingIndex(indexCave);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                            indexBuilding = -1;
+                            indexHouse = -1;
+                            indexFountain = -1;
+                            indexTower = -1;
+                            indexAmbar = -1;
+                        }
+                        else if (indexBuilding != -1)
+                        {
+                            if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) - 50))*(pos.y - (building.getY(indexBuilding) - 50)))) <= 950 )
+                            {
+                                puts("1");
+                            }
+                            else if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) + 50))*(pos.y - (building.getY(indexBuilding) + 50)))) <= 950 )
+                            {
+                                building.deleteBuildingIndex(indexBuilding);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                            indexBuilding = -1;
+                            indexHouse = -1;
+                            indexFountain = -1;
+                            indexTower = -1;
+                            indexAmbar = -1;
+                        }
+                        else if (indexHouse != -1)
+                        {
+                            if ( (((pos.x - house.getX(indexHouse))*(pos.x  - house.getX(indexHouse))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                            {
+                                puts("1");
+                            }
+                            else if ( (((pos.x - house.getX(indexHouse))*(pos.x  - house.getX(indexHouse))) + ((pos.y - (house.getY(indexHouse) + 50))*(pos.y - (house.getY(indexHouse) + 50)))) <= 950 )
+                            {
+                                house.deleteBuildingIndex(indexHouse);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                            indexBuilding = -1;
+                            indexHouse = -1;
+                            indexFountain = -1;
+                            indexTower = -1;
+                            indexAmbar = -1;
+                        }
+                        else if (indexFountain != -1)
+                        {
+                            if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) - 50))*(pos.y - (fountain.getY(indexFountain) - 50)))) <= 950 )
+                            {
+                                puts("1");
+                            }
+                            else if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) + 50))*(pos.y - (fountain.getY(indexFountain) + 50)))) <= 950 )
+                            {
+                                fountain.deleteBuildingIndex(indexFountain);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                            indexBuilding = -1;
+                            indexHouse = -1;
+                            indexFountain = -1;
+                            indexTower = -1;
+                            indexAmbar = -1;
+                        }
+                        else if (indexTower != -1)
+                        {
+                            if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) - 50))*(pos.y - (tower.getY(indexTower) - 50)))) <= 950 )
+                            {
+                                puts("1");
+                            }
+                            else if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) + 50))*(pos.y - (tower.getY(indexTower) + 50)))) <= 950 )
+                            {
+                                tower.deleteBuildingIndex(indexTower);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                            indexBuilding = -1;
+                            indexHouse = -1;
+                            indexFountain = -1;
+                            indexTower = -1;
+                            indexAmbar = -1;
+                        }
+                        else if (indexAmbar != -1)
+                        {
+                            if ( (((pos.x - ambar.getX(indexAmbar))*(pos.x  - ambar.getX(indexAmbar))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                            {
+                                puts("1");
+                            }
+                            else if ( (((pos.x - ambar.getX(indexAmbar))*(pos.x  - ambar.getX(indexAmbar))) + ((pos.y - (ambar.getY(indexAmbar) + 50))*(pos.y - (ambar.getY(indexAmbar) + 50)))) <= 950 )
+                            {
+                                ambar.deleteBuildingIndex(indexAmbar);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                            indexBuilding = -1;
+                            indexHouse = -1;
+                            indexFountain = -1;
+                            indexTower = -1;
+                            indexAmbar = -1;
+                        }
+                        else
+                        {
+                            // Выбор обьекта "выбор" который нажат
+                            indexCave = cave.checkPosition(pos.x, pos.y);
+                            indexBuilding = building.checkPosition(pos.x, pos.y);
+                            indexHouse = house.checkPosition(pos.x, pos.y);
+                            indexTower = tower.checkPosition(pos.x, pos.y);
+                            indexFountain = fountain.checkPosition(pos.x, pos.y);
+                            indexAmbar = ambar.checkPosition(pos.x, pos.y);
+                        }
+                    }
                 }
                 if (event.key.code == Mouse::Right)
                 {
+                    // Вставка обьекта (если можно вставить в даную область карты)
                     if (isSelect == 1)
                     {
                         if (cave.build(41, pos.x, pos.y))
@@ -567,6 +842,7 @@ void game(RenderWindow & window)
         //window.draw(oz.sprite);
         window.draw(castle.sprite);
 
+        // Прорисовка обьектов
         cave.moveAndDraw(window, 41, pos.x, pos.y);
         building.moveAndDraw(window, 50, pos.x, pos.y);
         house.moveAndDraw(window, 69, pos.x, pos.y);
@@ -574,7 +850,42 @@ void game(RenderWindow & window)
         tower.moveAndDraw(window, 53, pos.x, pos.y);
         ambar.moveAndDraw(window, 84, pos.x, pos.y);
 
+        // Прорисовка обьекта "выбор" при нажатии на обьект
+        if(pressed_selection_building  == true)
+        {
+            if (indexCave != -1)
+            {
+                selection2.sprite.setPosition(cave.getX(indexCave), cave.getY(indexCave));
+                window.draw(selection2.sprite);
+            }
+            if (indexBuilding != -1)
+            {
+                selection2.sprite.setPosition(building.getX(indexBuilding), building.getY(indexBuilding));
+                window.draw(selection2.sprite);
+            }
+            if (indexHouse != -1)
+            {
+                selection2.sprite.setPosition(house.getX(indexHouse), house.getY(indexHouse));
+                window.draw(selection2.sprite);
+            }
+            if (indexFountain != -1)
+            {
+                selection2.sprite.setPosition(fountain.getX(indexFountain), fountain.getY(indexFountain));
+                window.draw(selection2.sprite);
+            }
+            if (indexTower != -1)
+            {
+                selection2.sprite.setPosition(tower.getX(indexTower), tower.getY(indexTower));
+                window.draw(selection2.sprite);
+            }
+            if (indexAmbar != -1)
+            {
+                selection2.sprite.setPosition(ambar.getX(indexAmbar), ambar.getY(indexAmbar));
+                window.draw(selection2.sprite);
+            }
+        }
 
+        // Прорисовка обьекта "выбор" при нажатии на обьект "Замок"
         if (pressed_selection == true)
         {
             window.draw(selection.sprite);
@@ -663,7 +974,7 @@ void game(RenderWindow & window)
 
 int main()
 {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(50);
 
@@ -673,6 +984,32 @@ int main()
     return 0;
 }
 
+/*int main(int argc, char *argv[])
+{
+    ifstream fs("map1.txt", ios::in | ios::binary);
+
+    while (fs.getline(buffer[countStr], 50))
+    {
+        countStr++;
+    }
+    fs.close();
+
+
+    fstream file;
+    file.open("map1.txt", ios::out);
+    file << "";
+    file.close();
+
+    ofstream fout("map1.txt", std::ios_base::app);
+    for(int k = 0; k < countStr; k++)
+    {
+        //if(k != delIndex)
+            fout << buffer[k] << "\n";
+    }
+    fout.close();
+
+    return 0;
+}*/
 
 
 
