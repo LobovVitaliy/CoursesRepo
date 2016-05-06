@@ -193,7 +193,9 @@ public:             // private
     bool isCreate = false;
     bool isLive = false;
 
-    ImagesBuild(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
+    int coins = 0;
+
+    ImagesBuild(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
     {
         //File = file;
         image.loadFromFile(file);
@@ -207,6 +209,7 @@ public:             // private
         isMove = false;
         isCreate = false;
         isLive = false;
+        this->coins = coins;
         sprite.setOrigin(Vector2f(w/2, h/2));
     }
 
@@ -225,17 +228,17 @@ public:
 
     int maxCount;
     int index = -1;
-    int coints = 0;
+    //int coins = 0;
 
-    Building(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coints = 0)
+    Building(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
     {
         this->maxCount = maxCount;
-        this->coints = coints;
+        //this->coins = coins;
         building = new ImagesBuild* [maxCount];
 
         for(int i = 0; i < maxCount; i++)
         {
-            building[i] = new ImagesBuild(file, positionX, positionY, width, height);
+            building[i] = new ImagesBuild(file, positionX, positionY, width, height, coins);
         }
     }
 
@@ -333,7 +336,7 @@ public:
         }
         fout.close();
 
-        int x, y, w, h, R;
+        int x, y, w, h, R, coins;
         bool isMove, isCreate, isLive;
 
         Image image;
@@ -348,6 +351,7 @@ public:
             w = building[i + 1]->w;
             h = building[i + 1]->h;
             R = building[i + 1]->R;
+            coins = building[i + 1]->coins;
 
             image = building[i + 1]->image;
             texture = building[i + 1]->texture;
@@ -363,6 +367,7 @@ public:
             building[i]->w = w;
             building[i]->h = h;
             building[i]->R = R;
+            building[i]->coins = coins;
 
             building[i]->image = image;
             building[i]->texture = texture;
@@ -455,9 +460,22 @@ public:
         }
     }
 
-    int getCoints()
+    int setCoins(int indexBuilding, int newCoins)
     {
-        return coints * (index + 1);
+        building[indexBuilding]->coins += newCoins;
+    }
+
+    int getCoins()
+    {
+        int coins = 0;
+        for(int i = 0; i < index + 1; i++)
+        {
+            if(building[i]->isMove == false)
+            {
+                 coins += building[i]->coins;
+            }
+        }
+        return coins;
     }
 
     int getIndex()
@@ -485,6 +503,9 @@ void game(RenderWindow & window)
     Images castle("Images/CastleNew.png", 683, 384, 250, 268);
     Images selection("Images/selection.png", 675, 384, 365, 317);//683->675
 
+    Images selectionNot("Images/selectionNotLittle.png", 0, 0, 58, 60);
+    Images selectionNotAddition("Images/selectionNotLittle.png", 0, 0, 58, 60);
+
     Images selectionNot1("Images/selectionNot.png", 603, 266, 70, 72);
     Images selectionNot2("Images/selectionNot.png", 747, 266, 70, 72);
     Images selectionNot3("Images/selectionNot.png", 819, 384, 70, 72);
@@ -492,7 +513,9 @@ void game(RenderWindow & window)
     Images selectionNot5("Images/selectionNot.png", 603, 504, 70, 72);
     Images selectionNot6("Images/selectionNot.png", 533, 384, 70, 72);
 
-    Images selection2("Images/selection2Update.png", 0, 0, 64, 164);//80->64
+    Images selection2("Images/selection2Update1.png", 0, 0, 64, 164);//80->64
+    Images selection3House("Images/selection3House.png", 0, 0, 160, 164);
+    Images selection3Ambar("Images/selection3Ambar.png", 0, 0, 160, 164);
     int indexCave = -1;
     int indexBuilding = -1;
     int indexHouse = -1;
@@ -519,7 +542,7 @@ void game(RenderWindow & window)
     int isSelect = 0;
 
     char money[10] = "0";
-    int coins = 110;
+    int coins = 10000;
 
     Clock clock;
     Clock clockTimer;
@@ -535,7 +558,7 @@ void game(RenderWindow & window)
         timer += clockTimer.getElapsedTime().asSeconds();
         if(timer > 200)//2000
         {
-            if(coins < 1000000000) coins += 10 + cave.getCoints() + building.getCoints() + house.getCoints() + ambar.getCoints();
+            if(coins < 1000000000) coins += 10 + cave.getCoins() + building.getCoins() + house.getCoins() + ambar.getCoins();
             sprintf(money, "%i", coins);
             timer = 0;
             clockTimer.restart();
@@ -633,10 +656,17 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) - 50))*(pos.y - (cave.getY(indexCave) - 50)))) <= 950 )
                             {
-                                puts("1");
+                                if (coins >= 1000)
+                                {
+                                    coins -= 1000;
+                                    cave.setCoins(indexCave, 10);
+                                    sprintf(money, "%i", coins);
+                                }
                             }
                             else if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) + 50))*(pos.y - (cave.getY(indexCave) + 50)))) <= 950 )
                             {
+                                coins += 25;
+                                sprintf(money, "%i", coins);
                                 cave.deleteBuildingIndex(indexCave);
                             }
 
@@ -652,10 +682,17 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) - 50))*(pos.y - (building.getY(indexBuilding) - 50)))) <= 950 )
                             {
-                                puts("1");
+                                if (coins >= 2000)
+                                {
+                                    coins -= 2000;
+                                    building.setCoins(indexBuilding, 15);
+                                    sprintf(money, "%i", coins);
+                                }
                             }
                             else if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) + 50))*(pos.y - (building.getY(indexBuilding) + 50)))) <= 950 )
                             {
+                                coins += 125;
+                                sprintf(money, "%i", coins);
                                 building.deleteBuildingIndex(indexBuilding);
                             }
 
@@ -669,12 +706,28 @@ void game(RenderWindow & window)
                         }
                         else if (indexHouse != -1)
                         {
-                            if ( (((pos.x - house.getX(indexHouse))*(pos.x  - house.getX(indexHouse))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
-                            {
-                                puts("1");
+                            if ( (((pos.x - (house.getX(indexHouse) - 48))*(pos.x  - (house.getX(indexHouse) - 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 1500)
+                                {
+                                    coins -= 1500;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - (house.getX(indexHouse) + 48))*(pos.x  - (house.getX(indexHouse) + 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 1500)
+                                {
+                                    coins -= 1500;
+                                    house.setCoins(indexHouse, 10);
+                                    sprintf(money, "%i", coins);
+                                }
                             }
                             else if ( (((pos.x - house.getX(indexHouse))*(pos.x  - house.getX(indexHouse))) + ((pos.y - (house.getY(indexHouse) + 50))*(pos.y - (house.getY(indexHouse) + 50)))) <= 950 )
                             {
+                                coins += 125;
+                                sprintf(money, "%i", coins);
                                 house.deleteBuildingIndex(indexHouse);
                             }
 
@@ -690,10 +743,17 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) - 50))*(pos.y - (fountain.getY(indexFountain) - 50)))) <= 950 )
                             {
-                                puts("1");
+                                if (coins >= 2000)
+                                {
+                                    coins -= 2000;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
                             }
                             else if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) + 50))*(pos.y - (fountain.getY(indexFountain) + 50)))) <= 950 )
                             {
+                                coins += 500;
+                                sprintf(money, "%i", coins);
                                 fountain.deleteBuildingIndex(indexFountain);
                             }
 
@@ -709,10 +769,17 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) - 50))*(pos.y - (tower.getY(indexTower) - 50)))) <= 950 )
                             {
-                                puts("1");
+                                if (coins >= 2000)
+                                {
+                                    coins -= 2000;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
                             }
                             else if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) + 50))*(pos.y - (tower.getY(indexTower) + 50)))) <= 950 )
                             {
+                                coins += 500;
+                                sprintf(money, "%i", coins);
                                 tower.deleteBuildingIndex(indexTower);
                             }
 
@@ -726,12 +793,28 @@ void game(RenderWindow & window)
                         }
                         else if (indexAmbar != -1)
                         {
-                            if ( (((pos.x - ambar.getX(indexAmbar))*(pos.x  - ambar.getX(indexAmbar))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
-                            {
-                                puts("1");
+                            if ( (((pos.x - (ambar.getX(indexAmbar) - 48))*(pos.x  - (ambar.getX(indexAmbar) - 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 2500)
+                                {
+                                    coins -= 2500;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - (ambar.getX(indexAmbar) + 48))*(pos.x  - (ambar.getX(indexAmbar) + 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 1000)
+                                {
+                                    coins -= 1000;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
                             }
                             else if ( (((pos.x - ambar.getX(indexAmbar))*(pos.x  - ambar.getX(indexAmbar))) + ((pos.y - (ambar.getY(indexAmbar) + 50))*(pos.y - (ambar.getY(indexAmbar) + 50)))) <= 950 )
                             {
+                                coins += 225;
+                                sprintf(money, "%i", coins);
                                 ambar.deleteBuildingIndex(indexAmbar);
                             }
 
@@ -857,31 +940,92 @@ void game(RenderWindow & window)
             {
                 selection2.sprite.setPosition(cave.getX(indexCave), cave.getY(indexCave));
                 window.draw(selection2.sprite);
+
+                if (coins < 1000)
+                {
+                    selectionNot.x = cave.getX(indexCave);
+                    selectionNot.y = cave.getY(indexCave) - 50;
+                    selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
+                    window.draw(selectionNot.sprite);
+                }
             }
             if (indexBuilding != -1)
             {
                 selection2.sprite.setPosition(building.getX(indexBuilding), building.getY(indexBuilding));
                 window.draw(selection2.sprite);
+
+                if (coins < 2000)
+                {
+                    selectionNot.x = building.getX(indexBuilding);
+                    selectionNot.y = building.getY(indexBuilding) - 50;
+                    selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
+                    window.draw(selectionNot.sprite);
+                }
             }
             if (indexHouse != -1)
             {
-                selection2.sprite.setPosition(house.getX(indexHouse), house.getY(indexHouse));
-                window.draw(selection2.sprite);
+                selection3House.sprite.setPosition(house.getX(indexHouse), house.getY(indexHouse));
+                window.draw(selection3House.sprite);
+
+                if (coins < 1500)
+                {
+                    selectionNot.x = house.getX(indexHouse) - 48;
+                    selectionNot.y = house.getY(indexHouse) - 50;
+                    selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
+                    window.draw(selectionNot.sprite);
+
+                    selectionNotAddition.x = house.getX(indexHouse) + 48;
+                    selectionNotAddition.y = house.getY(indexHouse) - 50;
+                    selectionNotAddition.sprite.setPosition(selectionNotAddition.x, selectionNotAddition.y);
+                    window.draw(selectionNotAddition.sprite);
+                }
             }
             if (indexFountain != -1)
             {
                 selection2.sprite.setPosition(fountain.getX(indexFountain), fountain.getY(indexFountain));
                 window.draw(selection2.sprite);
+
+                if (coins < 2000)
+                {
+                    selectionNot.x = fountain.getX(indexFountain);
+                    selectionNot.y = fountain.getY(indexFountain) - 50;
+                    selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
+                    window.draw(selectionNot.sprite);
+                }
             }
             if (indexTower != -1)
             {
                 selection2.sprite.setPosition(tower.getX(indexTower), tower.getY(indexTower));
                 window.draw(selection2.sprite);
+
+                if (coins < 2000)
+                {
+                    selectionNot.x = tower.getX(indexTower);
+                    selectionNot.y = tower.getY(indexTower) - 50;
+                    selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
+                    window.draw(selectionNot.sprite);
+                }
             }
             if (indexAmbar != -1)
             {
-                selection2.sprite.setPosition(ambar.getX(indexAmbar), ambar.getY(indexAmbar));
-                window.draw(selection2.sprite);
+                selection3Ambar.sprite.setPosition(ambar.getX(indexAmbar), ambar.getY(indexAmbar));
+                window.draw(selection3Ambar.sprite);
+
+                if (coins < 2500)
+                {
+                    selectionNot.x = ambar.getX(indexAmbar) - 48;
+                    selectionNot.y = ambar.getY(indexAmbar) - 50;
+                    selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
+                    window.draw(selectionNot.sprite);
+                }
+
+                if (coins < 1000)
+                {
+                    selectionNotAddition.x = ambar.getX(indexAmbar) + 48;
+                    selectionNotAddition.y = ambar.getY(indexAmbar) - 50;
+                    selectionNotAddition.sprite.setPosition(selectionNotAddition.x, selectionNotAddition.y);
+                    window.draw(selectionNotAddition.sprite);
+                }
             }
         }
 
@@ -974,7 +1118,7 @@ void game(RenderWindow & window)
 
 int main()
 {
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
+    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
     window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(50);
 
