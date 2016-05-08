@@ -1,0 +1,25 @@
+[
+    {
+        "name" : "Taras",
+        "surname" : "Shevchenko",
+        "date" : "1992-03-09",
+        "count" : 3,
+        "score" : 4.6
+    },
+
+    {
+        "name" : "Jon",
+        "surname" : "Adams",
+        "date" : "2004-11-03",
+        "count" : 2,
+        "score" : 5.0
+    },
+
+    {
+        "name" : "Ira",
+        "surname" : "Burlaka",
+        "date" : "2000-01-01",
+        "count" : 4,
+        "score" : 4.3
+    }
+]

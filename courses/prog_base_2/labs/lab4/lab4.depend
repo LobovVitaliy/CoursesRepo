@@ -1,0 +1,44 @@
+# depslib dependency file v1.0
+1462706524 source:d:\力\workspace_2\labs\lab4\lab4\main.c
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<string.h>
+	<ctype.h>
+	"socket.h"
+	"http.h"
+	"ScrumMaster.h"
+	"cJSON.h"
+
+1461571278 d:\力\workspace_2\labs\lab4\lab4\socket.h
+
+1462474039 source:d:\力\workspace_2\labs\lab4\lab4\socket_win.c
+	<winsock2.h>
+	"socket.h"
+
+1461321456 source:d:\力\workspace_2\labs\lab4\lab4\cjson.c
+	<string.h>
+	<stdio.h>
+	<math.h>
+	<stdlib.h>
+	<float.h>
+	<limits.h>
+	<ctype.h>
+	"cJSON.h"
+
+1461321456 d:\力\workspace_2\labs\lab4\lab4\cjson.h
+
+1462477993 d:\力\workspace_2\labs\lab4\lab4\http.h
+
+1462657414 d:\力\workspace_2\labs\lab4\lab4\scrummaster.h
+
+1462705982 source:d:\力\workspace_2\labs\lab4\lab4\scrummaster.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	"ScrumMaster.h"
+
+1462647774 source:d:\力\workspace_2\labs\lab4\lab4\http.c
+	<stddef.h>
+	"http.h"
+
