@@ -4,11 +4,10 @@
 
 #include "list.h"
 #include "text.h"
-#include "editor.h"
+//#include "editor.h"
 
-int vowel(text_t * text) {
+int vowel(char * str) {
     char vowel[12] = {'A', 'a', 'E', 'e', 'I', 'i', 'O', 'o', 'U', 'u', 'Y', 'y'};
-    char * str = text_getEl(text, text_getSize(text) - 1);
 
     for(int i = 0; i < 12; i++)
     {
@@ -20,15 +19,20 @@ int vowel(text_t * text) {
     return 0;
 }
 
-int overflow(text_t * text) {
-    char * str = text_getEl(text, text_getSize(text) - 1);
-
+int overflow(char * str) {
     if(strlen(str) > 20)
         return 1;
     else
         return 0;
 }
 
+void double_f(char * newSent) {
+    printf("Double string: %s\n", newSent);
+}
+
+void overflow_f(char * newSent) {
+    printf("Overflow!!! Last string: %s\n", newSent);
+}
 
 int main()
 {
@@ -36,11 +40,14 @@ int main()
 
     text_t * text = text_new();
 
-    editor_t * first = editor_new("Jon");
-    editor_t * second = editor_new("Mike");
+    //editor_t * first = editor_new("Jon");
+    //editor_t * second = editor_new("Mike");
 
-    text_subscribe(text, first, vowel);
-    text_subscribe(text, second, overflow);
+    test_subsDouble(text, double_f);
+    test_subsOverflow(text, overflow_f);
+
+    text_subscribe(text, vowel);
+    text_subscribe(text, overflow);
 
     do
     {
@@ -48,14 +55,14 @@ int main()
         gets(buffer);
 
         text_push(text, buffer);
-        text_check(text);
+        //text_check(text);
     }
     while (text_getSize(text) != 10);
 
     text_printf(text);
 
-    editor_free(first);
-    editor_free(second);
+    //editor_free(first);
+    //editor_free(second);
     text_free(text);
 
     return 0;

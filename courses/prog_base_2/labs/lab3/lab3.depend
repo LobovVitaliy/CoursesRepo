@@ -21,7 +21,7 @@
 1462277523 d:\力\workspace_2\labs\lab3\editor.h
 	"list.h"
 
-1463140544 source:d:\力\workspace_2\labs\lab3\lab3\editor.c
+1463226566 source:d:\力\workspace_2\labs\lab3\lab3\editor.c
 	<stdlib.h>
 	<string.h>
 	<stdio.h>
@@ -30,19 +30,18 @@
 1463140523 d:\力\workspace_2\labs\lab3\lab3\editor.h
 	"text.h"
 
-1463140697 d:\力\workspace_2\labs\lab3\lab3\list.h
+1463227932 d:\力\workspace_2\labs\lab3\lab3\list.h
 
 1462902955 source:d:\力\workspace_2\labs\lab3\lab3\list.c
 	<stdlib.h>
 	"list.h"
 
-1463140455 source:d:\力\workspace_2\labs\lab3\lab3\main.c
+1463229823 source:d:\力\workspace_2\labs\lab3\lab3\main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	"list.h"
 	"text.h"
-	"editor.h"
 	<stdlib.h>
 	<stdarg.h>
 	<stddef.h>
@@ -51,10 +50,10 @@
 
 1424096216 c:\program files (x86)\cmocka\include\cmocka.h
 
-1463141338 d:\力\workspace_2\labs\lab3\lab3\text.h
+1463230389 d:\力\workspace_2\labs\lab3\lab3\text.h
 	"list.h"
 
-1463141356 source:d:\力\workspace_2\labs\lab3\lab3\text.c
+1463230013 source:d:\力\workspace_2\labs\lab3\lab3\text.c
 	<stdlib.h>
 	<string.h>
 	<stdio.h>
