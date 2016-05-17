@@ -73,7 +73,7 @@ void text_push(text_t * self, char * text) {
 }
 
 char * text_pop(text_t * self) {
-    static char str[512] = "";
+    char str[512] = "";
 
     strcpy(str, self->text[self->size - 1]);
     self->text[self->size][0] = '\0';
