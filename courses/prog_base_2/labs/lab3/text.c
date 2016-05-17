@@ -12,6 +12,7 @@ struct text_s {
     list_t * event_notification;
     cb_fn double_cb;
     cb_fn overflow_cb;
+    int statusD;
 };
 
 text_t * text_new() {
@@ -31,19 +32,32 @@ void text_free(text_t * self) {
     free(self);
 }
 
+void test_setStatusD(text_t * self, int status) {
+    self->statusD = status;
+}
+
+int test_getStatusD(text_t * self) {
+    return self->statusD;
+}
+
 void test_subsDouble(text_t * self, cb_fn cb) {
     self->double_cb = cb;
+    self->statusD = 0;
 }
 
 void test_subsOverflow(text_t * self, cb_fn cb) {
     self->overflow_cb = cb;
 }
 
+
+
+
 void text_push(text_t * self, char * text) {
     // @todo
+    self->statusD = 0;
     for(int i = 0; i < self->size; i++) {
         if(strcmp(self->text[i], text) == 0) {
-            self->double_cb(text);
+            self->double_cb(self, text);
             break;
         }
     }
@@ -57,9 +71,14 @@ void text_push(text_t * self, char * text) {
     text_check(self);
 
     if (self->size == 10) {
-        self->overflow_cb(text);
+        self->overflow_cb(self, text);
     }
 }
+
+
+
+
+
 
 char * text_pop(text_t * self) {
     static char str[512] = "";
@@ -73,6 +92,10 @@ char * text_pop(text_t * self) {
 
 int text_getSize(text_t * self) {
     return self->size;
+}
+
+int text_listGetSize(text_t * self) {
+    return list_getCount(self->event_notification);
 }
 
 char * text_getEl(text_t * self, int index) {

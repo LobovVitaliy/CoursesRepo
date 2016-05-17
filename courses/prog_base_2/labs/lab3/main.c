@@ -4,7 +4,6 @@
 
 #include "list.h"
 #include "text.h"
-//#include "editor.h"
 
 int vowel(char * str) {
     char vowel[12] = {'A', 'a', 'E', 'e', 'I', 'i', 'O', 'o', 'U', 'u', 'Y', 'y'};
@@ -26,11 +25,12 @@ int overflow(char * str) {
         return 0;
 }
 
-void double_f(char * newSent) {
+void double_f(text_t * self, char * newSent) {
     printf("Double string: %s\n", newSent);
+    test_setStatusD(self, 1);
 }
 
-void overflow_f(char * newSent) {
+void overflow_f(text_t * self, char * newSent) {
     printf("Overflow!!! Last string: %s\n", newSent);
 }
 
@@ -39,9 +39,6 @@ int main()
     char buffer[512];
 
     text_t * text = text_new();
-
-    //editor_t * first = editor_new("Jon");
-    //editor_t * second = editor_new("Mike");
 
     test_subsDouble(text, double_f);
     test_subsOverflow(text, overflow_f);
@@ -53,23 +50,19 @@ int main()
     {
         printf("Writer: ");
         gets(buffer);
-
         text_push(text, buffer);
-        //text_check(text);
     }
     while (text_getSize(text) != 10);
 
     text_printf(text);
 
-    //editor_free(first);
-    //editor_free(second);
     text_free(text);
 
     return 0;
 }
 
-/*
-#include <stdlib.h>  // !
+
+/*#include <stdlib.h>  // !
 #include <stdarg.h>  // !
 #include <stddef.h>  // !
 #include <setjmp.h>  // !
@@ -109,28 +102,23 @@ static void text_getEl__text_Index__text (void **state)
     text_free(text);
 }
 
-static void text_subscribe__text_receiver_callback__pushCallback (void **state)
+static void text_subscribe__text_callback__pushCallback (void **state)
 {
     text_t * text = text_new();
-        editor_t * editor = editor_new("Mike");
-            text_subscribe(text, editor, vowel);
-            assert_int_equal(text_listGetSize(text), 1);
-        editor_free(editor);
+        text_subscribe(text, vowel);
+        assert_int_equal(text_listGetSize(text), 1);
     text_free(text);
 }
 
-static void text_check__text__popText (void **state)
+static void callback_double__text_string__statusTrue (void **state)
 {
     text_t * text = text_new();
-        editor_t * editor = editor_new("Mike");
-            text_subscribe(text, editor, vowel);
-            text_push(text, "Entry");
-            text_check(text);
-            assert_int_equal(text_getSize(text), 0);
-        editor_free(editor);
+        test_subsDouble(text, double_f);
+        text_push(text, "OK");
+        text_push(text, "OK");
+        assert_int_equal(test_getStatusD(text), 1);
     text_free(text);
 }
-
 
 int main(void) {
     const struct CMUnitTest tests[] =
@@ -139,8 +127,8 @@ int main(void) {
         cmocka_unit_test(text_push__text__pushText),
         cmocka_unit_test(text_pop__text__popText),
         cmocka_unit_test(text_getEl__text_Index__text),
-        cmocka_unit_test(text_subscribe__text_receiver_callback__pushCallback),
-        cmocka_unit_test(text_check__text__popText)
+        cmocka_unit_test(text_subscribe__text_callback__pushCallback),
+        cmocka_unit_test(callback_double__text_string__statusTrue)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }*/

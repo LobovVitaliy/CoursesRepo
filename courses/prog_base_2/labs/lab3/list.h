@@ -4,7 +4,6 @@
 typedef struct list_s list_t;
 
 typedef struct event_s {
-    //void * receiver;
     void * callback;
 } event_t;
 

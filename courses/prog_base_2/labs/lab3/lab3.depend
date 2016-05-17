@@ -30,13 +30,13 @@
 1463140523 d:\力\workspace_2\labs\lab3\lab3\editor.h
 	"text.h"
 
-1463227932 d:\力\workspace_2\labs\lab3\lab3\list.h
+1463233955 d:\力\workspace_2\labs\lab3\lab3\list.h
 
 1462902955 source:d:\力\workspace_2\labs\lab3\lab3\list.c
 	<stdlib.h>
 	"list.h"
 
-1463229823 source:d:\力\workspace_2\labs\lab3\lab3\main.c
+1463235956 source:d:\力\workspace_2\labs\lab3\lab3\main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
@@ -50,10 +50,10 @@
 
 1424096216 c:\program files (x86)\cmocka\include\cmocka.h
 
-1463230389 d:\力\workspace_2\labs\lab3\lab3\text.h
+1463503448 d:\力\workspace_2\labs\lab3\lab3\text.h
 	"list.h"
 
-1463230013 source:d:\力\workspace_2\labs\lab3\lab3\text.c
+1463235933 source:d:\力\workspace_2\labs\lab3\lab3\text.c
 	<stdlib.h>
 	<string.h>
 	<stdio.h>
