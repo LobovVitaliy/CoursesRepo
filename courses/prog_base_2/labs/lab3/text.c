@@ -49,9 +49,6 @@ void test_subsOverflow(text_t * self, cb_fn cb) {
     self->overflow_cb = cb;
 }
 
-
-
-
 void text_push(text_t * self, char * text) {
     // @todo
     self->statusD = 0;
@@ -74,11 +71,6 @@ void text_push(text_t * self, char * text) {
         self->overflow_cb(self, text);
     }
 }
-
-
-
-
-
 
 char * text_pop(text_t * self) {
     static char str[512] = "";
@@ -108,7 +100,6 @@ void text_printf(text_t * self) {
     for (int i = 0; i < self->size; i++)
         printf("%i) %s\n", i + 1, self->text[i]);
 }
-
 
 static void text_check(text_t * self) {
     int count = list_getCount(self->event_notification);
