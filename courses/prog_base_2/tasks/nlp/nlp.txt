@@ -1,0 +1,29 @@
+Modification to the definition of plain old data.
+In C++03, a class or struct must follow a number of rules for it to be considered a plain old data (POD) type. Types that fit this definition produce object layouts that are compatible with C, and they could also be initialized statically. The C++03 standard has restrictions on what types are compatible with C or can be statically initialized despite no technical reason a compiler couldn't accept the program; if someone were to create a C++03 POD type and add a non-virtual member function, this type would no longer be a POD type, could not be statically initialized, and would be incompatible with C despite no change to the memory layout.
+C++11 relaxed several of the POD rules, by dividing the POD concept into two separate concepts: trivial and standard-layout.
+A type that is trivial can be statically initialized. It also means that it is legal to copy data around via memcpy, rather than having to use a copy constructor. The lifetime of a trivial type begins when its storage is defined, not when a constructor completes.
+A trivial class or struct is defined as one that.
+Has a trivial default constructor. This may use the default constructor syntax (SomeConstructor() = default;).
+Has trivial copy and move constructors, which may use the default syntax.
+Has trivial copy and move assignment operators, which may use the default syntax.
+Has a trivial destructor, which must not be virtual.
+Constructors are trivial only if there are no virtual member functions of the class and no virtual base classes. Copy/move operations also require all non-static data members to be trivial.
+A type that is standard-layout means that it orders and packs its members in a way that is compatible with C. A class or struct is standard-layout, by definition, provided.
+It has no virtual functions.
+It has no virtual base classes.
+All its non-static data members have the same access control (public, private, protected).
+All its non-static data members, including any in its base classes, are in the same one class in the hierarchy.
+The above rules also apply to all the base classes and to all non-static data members in the class hierarchy.
+It has no base classes of the same type as the first defined non-static data member.
+A class/struct/union is considered POD if it is trivial, standard-layout, and all of its non-static data members and base classes are PODs.
+By separating these concepts, it becomes possible to give up one without losing the other. A class with complex move and copy constructors may not be trivial, but it could be standard-layout and thus interop with C. Similarly, a class with public and private non-static data members would not be standard-layout, but it could be trivial and thus memcpy-able.
+New string literals.
+C++03 offers two kinds of string literals. The first kind, contained within double quotes, produces a null-terminated array of type const char. The second kind, defined as L"", produces a null-terminated array of type const wchar_t, where wchar_t is a wide-character of undefined size and semantics. Neither literal type offers support for string literals with UTF-8, UTF-16, or any other kind of Unicode encodings.
+The definition of the type char has been modified to explicitly express that it's at least the size needed to store an eight-bit coding of UTF-8, and large enough to contain any member of the compiler's basic execution character set. It was formerly defined as only the latter in the C++ standard itself, then relying on the C standard to guarantee at least 8 bits.
+C++11 supports three Unicode encodings: UTF-8, UTF-16, and UTF-32. Along with the formerly noted changes to the definition of char, C++11 adds two new character types: char16_t and char32_t. These are designed to store UTF-16 and UTF-32 respectively.
+User-defined literals.
+C++03 provides a number of literals. The characters "12.5" are a literal that is resolved by the compiler as a type double with the value of 12.5. However, the addition of the suffix "f", as in "12.5f", creates a value of type float that contains the value 12.5. The suffix modifiers for literals are fixed by the C++ specification, and C++ code cannot create new literal modifiers.
+C++11 also includes the ability for the user to define new kinds of literal modifiers that will construct objects based on the string of characters that the literal modifies.
+Literals transformation is redefined into two distinct phases: raw and cooked. A raw literal is a sequence of characters of some specific type, while the cooked literal is of a separate type. The C++ literal 1234, as a raw literal, is this sequence of characters '1', '2', '3', '4'. As a cooked literal, it is the integer 1234. The C++ literal 0xA in raw form is '0', 'x', 'A', while in cooked form it is the integer 10.
+Literals can be extended in both raw and cooked forms, with the exception of string literals, which can be processed only in cooked form. This exception is due to the fact that strings have prefixes that affect the specific meaning and type of the characters in question.
+All user-defined literals are suffixes; defining prefix literals is not possible. All suffixes starting with any character except underscore (_) are reserved by the standard. Thus, all user-defined literals have suffixes starting with an underscore (_).
