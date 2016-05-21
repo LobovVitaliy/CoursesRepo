@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1463762193 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\main\main.c
+	<stdlib.h>
+	"library.h"
+	<stdlib.h>
+	<stdarg.h>
+	<stddef.h>
+	<setjmp.h>
+	<cmocka.h>
+
+1463761811 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\library.h
+	"list.h"
+
+1463751669 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\list\list.h
+
+1463759813 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\list.h
+
+1424096216 c:\program files (x86)\cmocka\include\cmocka.h
+

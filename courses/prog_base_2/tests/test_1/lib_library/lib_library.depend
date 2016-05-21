@@ -1,0 +1,19 @@
+# depslib dependency file v1.0
+1463826070 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\main.c
+	<stdlib.h>
+	<string.h>
+	<stdio.h>
+	"library.h"
+
+1463825591 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\library.h
+	"list.h"
+
+1463751669 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\list\list.h
+
+1463759813 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\list.c
+	<stdlib.h>
+	<stdio.h>
+	"list.h"
+
+1463759813 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_1\lib_library\list.h
+
