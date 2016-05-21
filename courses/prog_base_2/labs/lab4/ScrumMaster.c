@@ -43,7 +43,7 @@ void master_swap(master * self, master * selfSwap)
 
 char * master_toJSON(master * self, int check)
 {
-    char text[1000];
+    char text[1000] = "";
     char * end = NULL;
 
     if(check == 0)
@@ -66,39 +66,27 @@ char * master_toJSON(master * self, int check)
     return text;
 }
 
-char * master_toHTML_ID(master * self, int ID)
+char * master_toHTML(master * self, int ID)
 {
     char text[10240] = "";
 
-    const char * pageTextBeg =
-        "<!DOCTYPE html>"
-        "<html>"
-        "<head>"
-        "<meta charset=\"UTF-8\">"
-        "<title>Sample</title>"
-        "</head>"
-        "<body>";
-    strcat(text, pageTextBeg);
-
-    char pageText[100];
+    char pageText[1024] = "";
     sprintf(pageText,
-                "<p>"
-                "Name: %s<br>"
-                "Surname: %s<br>"
-                "Date: %s<br>"
-                "Count: %i<br>"
-                "Score: %.1f"
-                "</p>",
-                self->name, self->surname, self->date, self->count, self->score);
+            "<p>"
+            "Name: %s<br>"
+            "Surname: %s<br>"
+            "Date: %s<br>"
+            "Count: %i<br>"
+            "Score: %.1f"
+            "</p>",
+            self->name, self->surname, self->date,
+            self->count, self->score);
     strcat(text, pageText);
 
-    const char * pageTexLink =
-        "<a href=\"#\" onclick=\"doDelete()\"/>Delete Scrum Master<br><br></a>\n"
-        "<a href=\"http://127.0.0.1:5000/ScrumMasters\">Back</a>\n";
-    strcat(text, pageTexLink);
+    char * pageTextLink = "<a href=\"#\" onclick=\"doDelete()\"/>Delete Scrum Master<br><br></a>\n";
+    strcat(text, pageTextLink);
 
-
-    char pageTextScript[100];
+    char pageTextScript[1024];
     sprintf(pageTextScript,
                 "<script>"
                 "function doDelete() {"
@@ -108,51 +96,6 @@ char * master_toHTML_ID(master * self, int ID)
                 "}"
                 "</script>", ID);
     strcat(text, pageTextScript);
-
-
-    const char * pageTextEnd =
-        "</body>\n"
-        "</html>";
-    strcat(text, pageTextEnd);
-
-    return text;
-}
-
-char * master_toHTML_New(master * self)
-{
-    char text[10240] = "";
-
-    const char * pageTextBeg =
-        "<!DOCTYPE html>"
-        "<html>"
-        "<head>"
-        "<meta charset=\"UTF-8\">"
-        "<title>Sample</title>"
-        "</head>"
-        "<body>";
-
-    strcat(text, pageTextBeg);
-
-    char pageText[100];
-
-    sprintf(pageText,
-                "<p>"
-                "Name: %s<br>"
-                "Surname: %s<br>"
-                "Date: %s<br>"
-                "Count: %i<br>"
-                "Score: %.1f"
-                "</p>",
-                self->name, self->surname, self->date, self->count, self->score);
-
-    strcat(text, pageText);
-
-    const char * pageTextEnd =
-        "<a href=\"http://127.0.0.1:5000/ScrumMasters\"><br>Back</a>\n"
-        "</body>\n"
-        "</html>";
-
-    strcat(text, pageTextEnd);
 
     return text;
 }
@@ -168,17 +111,3 @@ char * getSurname(master * self)
     return self->surname;
 }
 
-char * getDate(master * self)
-{
-    return self->date;
-}
-
-int getCount(master * self)
-{
-    return self->count;
-}
-
-double getScore(master * self)
-{
-    return self->score;
-}

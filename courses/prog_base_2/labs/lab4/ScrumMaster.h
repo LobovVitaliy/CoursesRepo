@@ -8,12 +8,11 @@ void master_free(master * self);
 
 void master_set(master * self, char * name, char * surname, char * date, int count, double score);
 void master_swap(master * self, master * selfSwap);
+
 char * master_toJSON(master * self, int check);
+char * master_toHTML(master * self, int ID);
 
 char * getName(master * self);
 char * getSurname(master * self);
-char * getDate(master * self);
-int getCount(master * self);
-double getScore(master * self);
 
 #endif

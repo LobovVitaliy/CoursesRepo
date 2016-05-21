@@ -1,8 +1,7 @@
 # depslib dependency file v1.0
-1462706524 source:d:\力\workspace_2\labs\lab4\lab4\main.c
+1463504779 source:d:\力\workspace_2\labs\lab4\lab4\main.c
 	<stdio.h>
 	<stdlib.h>
-	<stddef.h>
 	<string.h>
 	<ctype.h>
 	"socket.h"
@@ -30,9 +29,9 @@
 
 1462477993 d:\力\workspace_2\labs\lab4\lab4\http.h
 
-1462657414 d:\力\workspace_2\labs\lab4\lab4\scrummaster.h
+1462730225 d:\力\workspace_2\labs\lab4\lab4\scrummaster.h
 
-1462705982 source:d:\力\workspace_2\labs\lab4\lab4\scrummaster.c
+1462730171 source:d:\力\workspace_2\labs\lab4\lab4\scrummaster.c
 	<stdlib.h>
 	<stdio.h>
 	<string.h>
@@ -41,4 +40,55 @@
 1462647774 source:d:\力\workspace_2\labs\lab4\lab4\http.c
 	<stddef.h>
 	"http.h"
+
+1461321456 source:d:\op\workspace_2\labs\lab4\lab4\cjson.c
+	<string.h>
+	<stdio.h>
+	<math.h>
+	<stdlib.h>
+	<float.h>
+	<limits.h>
+	<ctype.h>
+	"cJSON.h"
+
+1461321456 d:\op\workspace_2\labs\lab4\lab4\cjson.h
+
+1462647774 source:d:\op\workspace_2\labs\lab4\lab4\http.c
+	<stddef.h>
+	"http.h"
+
+1462477993 d:\op\workspace_2\labs\lab4\lab4\http.h
+
+1463506478 source:d:\op\workspace_2\labs\lab4\lab4\main.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	"cJSON.h"
+	"server.h"
+
+1461571278 d:\op\workspace_2\labs\lab4\lab4\socket.h
+
+1462730225 d:\op\workspace_2\labs\lab4\lab4\scrummaster.h
+
+1463506565 source:d:\op\workspace_2\labs\lab4\lab4\scrummaster.c
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	"ScrumMaster.h"
+
+1462474039 source:d:\op\workspace_2\labs\lab4\lab4\socket_win.c
+	<winsock2.h>
+	"socket.h"
+
+1463506728 d:\op\workspace_2\labs\lab4\lab4\server.h
+	"socket.h"
+	"ScrumMaster.h"
+	"http.h"
+
+1463508462 source:d:\op\workspace_2\labs\lab4\lab4\server.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	"server.h"
 

@@ -49,6 +49,10 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="server.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="server.h" />
 		<Unit filename="socket.h" />
 		<Unit filename="socket_win.c">
 			<Option compilerVar="CC" />
