@@ -1,6 +1,8 @@
 #ifndef SCRUMMASTER_H_INCLUDED
 #define SCRUMMASTER_H_INCLUDED
 
+#include "cJSON.h"
+
 typedef struct ScrumMaster master;
 
 master * master_new(void);

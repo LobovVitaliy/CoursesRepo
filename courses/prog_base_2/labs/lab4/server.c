@@ -99,7 +99,7 @@ static int verification(char * name, char * surname, char * date, char * count, 
 
 static char * textToBuffer_JSON(char * text)
 {
-    char buffer[10240] = "";
+    char * buffer = malloc(sizeof(char) * 10240);
 
     sprintf(buffer,
             "HTTP/1.1 200 OK\n"
@@ -113,7 +113,7 @@ static char * textToBuffer_JSON(char * text)
 
 static char * textToBuffer_HTML(char * text)
 {
-    char buffer[10240] = "";
+    char * buffer = malloc(sizeof(char) * 10240);
 
     sprintf(buffer,
             "HTTP/1.1 200 OK\n"
@@ -131,7 +131,9 @@ void server_homepage(socket_t * client)
         "<h1>Hello, world of web!</h1>"
         "<a href=\"http://127.0.0.1:5000/ScrumMasters\">All Scrum Masters</a>";
 
-    strcat(buffer, textToBuffer_HTML(pageText));
+    char * text = textToBuffer_HTML(pageText);
+    strcat(buffer, text);
+    free(text);
 
     socket_write_string(client, pageText);
     socket_close(client);
@@ -142,7 +144,9 @@ void server_notFound(socket_t * client)
     char buffer[1024] = "";
     char * pageText = "404 Page Not Found!";
 
-    strcat(buffer, textToBuffer_HTML(pageText));
+    char * text = textToBuffer_HTML(pageText);
+    strcat(buffer, text);
+    free(text);
 
     socket_write_string(client, buffer);
     socket_close(client);
@@ -166,10 +170,13 @@ void server_masters(socket_t * client, http_request_t * req, master ** ScrumMast
                 jSm = master_toJSON(ScrumMasters[i], 1);
 
             strcat(text, jSm);
+            if(i !=  (*size) - 1) strcat(text, ",");
         }
         strcat(text, "]");
 
-        strcat(buffer, textToBuffer_JSON(text));
+        char * textHTML = textToBuffer_JSON(text);
+        strcat(buffer, textHTML);
+        free(textHTML);
     }
     else if (strcmp(req->method, "POST") == 0)
     {
@@ -187,12 +194,16 @@ void server_masters(socket_t * client, http_request_t * req, master ** ScrumMast
             strcat(pageText, jSm);
             (*size)++;
 
-            strcat(buffer, textToBuffer_JSON(pageText));
+            char * textHTML = textToBuffer_JSON(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
         else
         {
             char * pageText = "{\n    \"Error\": \"Wrong input\"\n}";
-            strcat(buffer, textToBuffer_JSON(pageText));
+            char * textHTML = textToBuffer_JSON(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
     }
 
@@ -215,12 +226,16 @@ void server_mastersByID(socket_t * client, http_request_t * req, master ** Scrum
             char pageText[1024] = "";
             char * jSm = master_toJSON(ScrumMasters[index], 0);
             strcat(pageText, jSm);
-            strcat(buffer, textToBuffer_JSON(pageText));
+            char * textHTML = textToBuffer_JSON(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
         else
         {
             char * pageText = "{\n    \"Error\": \"ID Not Found\"\n}";
-            strcat(buffer, textToBuffer_JSON(pageText));
+            char * textHTML = textToBuffer_JSON(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
     }
     else if (strcmp(req->method, "DELETE") == 0)
@@ -238,12 +253,16 @@ void server_mastersByID(socket_t * client, http_request_t * req, master ** Scrum
             (*size)--;
 
             char * pageText = "{\n    \"Success\": \"Successfully deleted\"\n}";
-            strcat(buffer, textToBuffer_JSON(pageText));
+            char * textHTML = textToBuffer_JSON(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
         else
         {
             char * pageText = "{\n    \"Error\": \"ID Not Found\"\n}";
-            strcat(buffer, textToBuffer_JSON(pageText));
+            char * textHTML = textToBuffer_JSON(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
     }
 
@@ -269,7 +288,9 @@ void server_mastersHtml(socket_t * client, http_request_t * req, master ** Scrum
         char * pageText = "<a href=\"http://127.0.0.1:5000/new-ScrumMaster\"><br>New Scrum Master</a>";
         strcat(text, pageText);
 
-        strcat(buffer, textToBuffer_HTML(text));
+        char * textHTML = textToBuffer_HTML(text);
+        strcat(buffer, textHTML);
+        free(textHTML);
     }
     else if (strcmp(req->method, "POST") == 0)
     {
@@ -285,12 +306,16 @@ void server_mastersHtml(socket_t * client, http_request_t * req, master ** Scrum
             char * pageText = "<h3>Success</h3>";
             (*size)++;
 
-            strcat(buffer, textToBuffer_HTML(pageText));
+            char * textHTML = textToBuffer_HTML(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
         else
         {
             char * pageText = "<h3>Wrong input</h3>";
-            strcat(buffer, textToBuffer_HTML(pageText));
+            char * textHTML = textToBuffer_HTML(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
     }
 
@@ -319,7 +344,9 @@ void server_mastersHtmlPOST(socket_t * client, http_request_t * req, master ** S
             "<input type=\"submit\" value='Send POST request' />"
             "</form>";
 
-        strcat(buffer, textToBuffer_HTML(pageText));
+            char * textHTML = textToBuffer_HTML(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
     }
 
     socket_write_string(client, buffer);
@@ -339,8 +366,13 @@ void server_mastersHtmlByID(socket_t * client, http_request_t * req, master ** S
         if (strcmp(req->method, "GET") == 0)
         {
             char pageText[1024] = "";
-            strcat(pageText, master_toHTML(ScrumMasters[index], index));
-            strcat(buffer, textToBuffer_HTML(pageText));
+            char * text = master_toHTML(ScrumMasters[index], index);
+            strcat(pageText, text);
+            free(text);
+
+            char * textHTML = textToBuffer_HTML(pageText);
+            strcat(buffer, textHTML);
+            free(textHTML);
         }
         else if (strcmp(req->method, "DELETE") == 0)
         {
@@ -361,7 +393,9 @@ void server_mastersHtmlByID(socket_t * client, http_request_t * req, master ** S
     else
     {
         char * pageText = "<h4>ID Not Found!</h4>";
-        strcat(buffer, textToBuffer_HTML(pageText));
+        char * textHTML = textToBuffer_HTML(pageText);
+        strcat(buffer, textHTML);
+        free(textHTML);
     }
 
     socket_write_string(client, buffer);

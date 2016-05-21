@@ -43,32 +43,19 @@ void master_swap(master * self, master * selfSwap)
 
 char * master_toJSON(master * self, int check)
 {
-    char text[1000] = "";
-    char * end = NULL;
-
-    if(check == 0)
-        end = "}";
-    else
-        end = "}, ";
-
-    sprintf(text,
-            "{\n"
-            "    \"name\": \"%s\",\n"
-            "    \"surname\": \"%s\",\n"
-            "    \"date\": \"%s\",\n"
-            "    \"count\": %i,\n"
-            "    \"score\": %.1f\n"
-            "%s",
-            self->name, self->surname,
-            self->date, self->count,
-            self->score, end);
-
-    return text;
+    cJSON * SM = cJSON_CreateObject();
+    cJSON_AddItemToObject(SM, "name", cJSON_CreateString(self->name));
+    cJSON_AddItemToObject(SM, "surname", cJSON_CreateString(self->surname));
+    cJSON_AddItemToObject(SM, "date", cJSON_CreateString(self->date));
+    cJSON_AddItemToObject(SM, "count", cJSON_CreateNumber(self->count));
+    cJSON_AddItemToObject(SM, "score", cJSON_CreateNumber(self->score));
+    char * jsonSM = cJSON_Print(SM);
+    return jsonSM;
 }
 
 char * master_toHTML(master * self, int ID)
 {
-    char text[10240] = "";
+    char * text = malloc(sizeof(char) * 10240);
 
     char pageText[1024] = "";
     sprintf(pageText,
