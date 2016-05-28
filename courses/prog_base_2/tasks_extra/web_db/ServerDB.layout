@@ -1,68 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="Debug" />
-	<File name="server.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="307" topLine="0" />
-		</Cursor>
-	</File>
-	<File name="server.c" open="1" top="1" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="1955" topLine="16" />
-		</Cursor>
-		<Folding>
-			<Collapse line="10" />
-			<Collapse line="23" />
-			<Collapse line="38" />
-			<Collapse line="57" />
-			<Collapse line="98" />
-			<Collapse line="123" />
-			<Collapse line="151" />
-			<Collapse line="160" />
-			<Collapse line="176" />
-			<Collapse line="193" />
-		</Folding>
-	</File>
 	<File name="db_manager.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="111" topLine="1" />
 		</Cursor>
 	</File>
-	<File name="db_manager.c" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="main.c" open="0" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="7857" topLine="39" />
+			<Cursor1 position="991" topLine="19" />
 		</Cursor>
-		<Folding>
-			<Collapse line="8" />
-			<Collapse line="14" />
-			<Collapse line="21" />
-			<Collapse line="26" />
-			<Collapse line="31" />
-			<Collapse line="36" />
-			<Collapse line="43" />
-			<Collapse line="48" />
-			<Collapse line="59" />
-			<Collapse line="65" />
-			<Collapse line="95" />
-			<Collapse line="248" />
-			<Collapse line="268" />
-		</Folding>
 	</File>
-	<File name="main.c" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+	<File name="server.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="1273" topLine="28" />
-		</Cursor>
-		<Folding>
-			<Collapse line="23" />
-			<Collapse line="42" />
-			<Collapse line="54" />
-			<Collapse line="58" />
-			<Collapse line="66" />
-		</Folding>
-	</File>
-	<File name="socket_win.c" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
-		<Cursor>
-			<Cursor1 position="140" topLine="0" />
+			<Cursor1 position="307" topLine="0" />
 		</Cursor>
 	</File>
 	<File name="sqlite3.c" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
@@ -73,6 +24,37 @@
 	<File name="sqlite3.h" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
 		<Cursor>
 			<Cursor1 position="413181" topLine="8602" />
+		</Cursor>
+	</File>
+	<File name="db_manager.c" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2435" topLine="86" />
+		</Cursor>
+		<Folding>
+			<Collapse line="7" />
+			<Collapse line="14" />
+			<Collapse line="21" />
+			<Collapse line="26" />
+			<Collapse line="31" />
+			<Collapse line="36" />
+			<Collapse line="42" />
+			<Collapse line="47" />
+			<Collapse line="59" />
+		</Folding>
+	</File>
+	<File name="server.c" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="2390" topLine="49" />
+		</Cursor>
+		<Folding>
+			<Collapse line="10" />
+			<Collapse line="23" />
+			<Collapse line="38" />
+		</Folding>
+	</File>
+	<File name="socket_win.c" open="0" top="0" tabpos="0" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="140" topLine="0" />
 		</Cursor>
 	</File>
 </CodeBlocks_layout_file>
