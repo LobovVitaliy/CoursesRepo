@@ -79,24 +79,44 @@ void server_second(socket_t * client, http_request_t * req)
     if (strcmp(req->method, "GET") == 0)
     {
         char textServer[10240] = "";
-        char pageText[10240] = "";
 
         lib_init();
         socket_t * sClient = socket_new();
         socket_connectByHostName(sClient, "pb-homework.appspot.com");
 
-        char request[200] = "";
-        strcat(request, "GET /test/var/20?format=json HTTP/1.1\r\nHost:pb-homework.appspot.com\r\n\r\n");
+        char requestText[200] = "";
+        strcat(requestText, "GET /test/var/20?format=json HTTP/1.1\r\nHost:pb-homework.appspot.com\r\n\r\n");
 
-        socket_write_string(sClient, request);
+        socket_write_string(sClient, requestText);
         socket_read(sClient, textServer, sizeof(textServer));
-        http_request_t request = http_request_parse(textServer);
-        request->form
 
         entity_t * entity = malloc(sizeof(struct entity_s));
-        time_t time = ctime(NULL);
-        strftime(entity->time, 20, "%Y-%m-%d %H:%M:%S", localtime(&time));
-        strcat(pageText, entity->time);
+
+        char * tmp = strstr(textServer,"{");
+        cJSON * sm = cJSON_CreateObject();
+        sm = cJSON_Parse(tmp);
+
+        strcpy(entity->movie, cJSON_GetObjectItem(sm, "movie")->valuestring);
+        entity->year = cJSON_GetObjectItem(sm, "year")->valueint;
+
+        cJSON_Delete(sm);
+
+        time_t rawtime;
+        struct tm * timeinfo;
+
+        time(&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        strcpy(entity->time, asctime(timeinfo));
+
+        entity->time[strlen(entity->time) - 1] = '\0';
+
+        cJSON * jText = cJSON_CreateObject();
+        cJSON_AddItemToObject(jText, "movie", cJSON_CreateString(entity->movie));
+        cJSON_AddItemToObject(jText, "year", cJSON_CreateNumber(entity->year));
+        cJSON_AddItemToObject(jText, "time", cJSON_CreateString(entity->time));
+        char * pageText = cJSON_Print(jText);
+
         free(entity);
 
         socket_free(sClient);
