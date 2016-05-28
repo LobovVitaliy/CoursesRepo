@@ -15,6 +15,9 @@ list_t * list_new() {
 }
 
 void list_free(list_t * self) {
+    for(int i = 0; i < self->size; i++) {
+        free(self->mas[i]);
+    }
     free(self);
 }
 

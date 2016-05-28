@@ -39,7 +39,6 @@ void db_parse(db_t * self, list_t * master)
         int rc = sqlite3_step(stmt);
         if (SQLITE_ERROR == rc)
         {
-            puts("Can't select!");
             exit(1);
         }
         else if (SQLITE_DONE == rc)
@@ -58,8 +57,6 @@ void db_parse(db_t * self, list_t * master)
             master_t * sm = master_new();
             master_set(sm, id, name, surname, count, date, score);
             list_add(master, sm);
-            master_free(sm);
-            puts(master_getName(list_get(master, 0)));
         }
     }
 

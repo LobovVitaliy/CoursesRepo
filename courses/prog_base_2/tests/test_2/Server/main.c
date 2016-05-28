@@ -109,35 +109,7 @@ int file_remove(const char * filename) {
     return 0;
 }*/
 
-/*
-void parse(char * text)
-{
-	cJSON * jList = cJSON_Parse(text);
-
-	if (!jList) {
-		printf("Error before: [%s]\n", cJSON_GetErrorPtr());
-		return;
-	}
-
-    int count = cJSON_GetArraySize(jList);
-    for (int i = 0; i < count; i++) {
-        cJSON * jItem = cJSON_GetArrayItem(jList, i);
-        char * name = cJSON_GetObjectItem(jItem, "name")->valuestring;
-        char * surname = cJSON_GetObjectItem(jItem, "surname")->valuestring;
-        char * birthdate = cJSON_GetObjectItem(jItem, "birthdate")->valuestring;
-        int year = cJSON_GetObjectItem(jItem, "year")->valueint;
-        double score = cJSON_GetObjectItem(jItem, "score")->valuedouble;
-        cJSON * jGroup = cJSON_GetObjectItem(jItem, "group");
-        char * groupName = cJSON_GetObjectItem(jGroup, "name")->valuestring;
-        char * faculty = cJSON_GetObjectItem(jGroup, "faculty")->valuestring;
-
-        printf("Name: \t%s\nSurnm: \t%s\nYear: \t%i\nScore:\t%f\nBirth:\t%s\n", name, surname, year, score, birthdate);
-        printf("Group:\t%s (%s)\n\n", groupName, faculty);
-    }
-    cJSON_Delete(jList);
-}
-*/
-
+#include "db_manager.h"
 #include "list.h"
 #include "server.h"
 
@@ -176,7 +148,7 @@ int main()
             }
             else if (strncmp(request.uri, "/files/", 7) == 0)
             {
-                //server_file(client, &request);
+                server_fourth(client, &request);
             }
             else
             {

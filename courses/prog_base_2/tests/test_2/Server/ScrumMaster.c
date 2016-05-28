@@ -36,12 +36,22 @@ char * master_getName(master_t * self)
     return self->name;
 }
 
-/*char * entity_getName(entity_t * self)
-{
-    return self->name;
-}
-
-char * entity_getSurname(entity_t * self)
+char * master_getSurname(master_t * self)
 {
     return self->surname;
-}*/
+}
+
+char * master_getDate(master_t * self)
+{
+    return self->date;
+}
+
+int master_getCount(master_t * self)
+{
+    return self->count;
+}
+
+double master_getScore(master_t * self)
+{
+    return self->score;
+}

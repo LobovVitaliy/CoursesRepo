@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1464428227 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\main.c
+1464432521 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\main.c
 	<stdio.h>
 	<stdlib.h>
 	<time.h>
@@ -8,6 +8,7 @@
 	<sys/types.h>
 	<dirent.h>
 	<windows.h>
+	"db_manager.h"
 	"list.h"
 	"server.h"
 
@@ -23,7 +24,7 @@
 
 1463910128 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\cjson.h
 
-1464428546 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\db_manager.c
+1464432820 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\db_manager.c
 	<stdlib.h>
 	<stdio.h>
 	<string.h>
@@ -46,7 +47,7 @@
 
 1463910128 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\http.h
 
-1464382254 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\list.c
+1464429468 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\list.c
 	<stdlib.h>
 	<stdio.h>
 	"list.h"
@@ -61,19 +62,23 @@
 
 1463910128 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\socket.h
 
-1464428688 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\scrummaster.c
+1464430690 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\scrummaster.c
 	<stdlib.h>
 	<string.h>
 	<stdio.h>
 	"ScrumMaster.h"
 
-1464427635 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\scrummaster.h
+1464430902 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\scrummaster.h
 
-1464428640 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\server.c
+1464434022 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\server.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
 	<ctype.h>
+	<sys/stat.h>
+	<sys/types.h>
+	<dirent.h>
+	<windows.h>
 	"server.h"
 
 1464383090 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\socket_win.c
