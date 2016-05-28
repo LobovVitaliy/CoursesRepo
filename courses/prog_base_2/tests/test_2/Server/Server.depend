@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1464432521 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\main.c
+1464439717 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\main.c
 	<stdio.h>
 	<stdlib.h>
 	<time.h>
@@ -54,7 +54,7 @@
 
 1463910128 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\list.h
 
-1464428276 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\server.h
+1464437209 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\server.h
 	"socket.h"
 	"http.h"
 	"cJSON.h"
@@ -70,7 +70,7 @@
 
 1464430902 d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\scrummaster.h
 
-1464434022 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\server.c
+1464442898 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\server.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
@@ -81,7 +81,7 @@
 	<windows.h>
 	"server.h"
 
-1464383090 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\socket_win.c
+1464442930 source:d:\op\work\coursesrepo\courses\prog_base_2\tests\test_2\server\socket_win.c
 	<winsock2.h>
 	"socket.h"
 

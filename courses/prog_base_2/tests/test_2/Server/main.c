@@ -120,7 +120,7 @@ int main()
     socket_bind(server, 5000);
     socket_listen(server);
 
-    char buffer[10240];
+    char buffer[10240] = "";
     socket_t * client = NULL;
 
     const char * dbFile = "ScrumMaster.db";
@@ -141,6 +141,10 @@ int main()
             if (strcmp(request.uri, "/info") == 0)
             {
                 server_first(client, &request);
+            }
+            else if (strcmp(request.uri, "/external") == 0)
+            {
+                server_second(client, &request);
             }
             else if (strcmp(request.uri, "/database") == 0)
             {

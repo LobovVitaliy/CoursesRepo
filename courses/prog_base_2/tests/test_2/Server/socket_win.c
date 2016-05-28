@@ -13,6 +13,19 @@ static socket_t * socket_new_winsock(SOCKET winsocket) {
     return self;
 }
 
+static SOCKADDR_IN getSockAddr(const char * host_name) {
+    struct hostent * remoteHost = gethostbyname(host_name);
+    char * ip = inet_ntoa(*(struct in_addr *)*remoteHost->h_addr_list);
+    SOCKADDR_IN recvSockAddr;
+
+    memset(&recvSockAddr, 0, sizeof(recvSockAddr));     // zero the sockaddr_in structure
+    recvSockAddr.sin_port = htons(80);                // specify the port portion of the address
+    recvSockAddr.sin_family = AF_INET;                  // specify the address family as Internet
+    recvSockAddr.sin_addr.s_addr = inet_addr(ip);       // specify ip address
+
+    return recvSockAddr;
+}
+
 socket_t * socket_new(void) {
     SOCKET winsock = socket(AF_INET, SOCK_STREAM, 0);
     // == INVALID_SOCKET; WSAGetLastError()
@@ -90,6 +103,16 @@ int socket_write_string(socket_t * self, const char * msg) {
 
 void socket_close(socket_t * self) {
     closesocket(self->winsock);
+}
+
+void socket_connectByHostName(socket_t * self, const char * host_name) {
+    SOCKADDR_IN recvSockAddr = getSockAddr(host_name);
+    if(connect(self->winsock, (SOCKADDR*)&recvSockAddr, sizeof(SOCKADDR_IN)) == SOCKET_ERROR) {
+        puts("ERROR: socket could not connect");
+        closesocket(self->winsock);
+        WSACleanup();
+        return;
+    }
 }
 
 /* STATIC */
