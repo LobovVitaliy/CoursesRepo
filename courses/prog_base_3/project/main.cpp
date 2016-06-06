@@ -1,23 +1,25 @@
 #include <SFML/Graphics.hpp>
 #include <Windows.h>
 #include <iostream>
-#include <cmath>
-
 #include <fstream>
 #include <cstring>
 #include <cstdlib>
+#include <cmath>
+#include <list>
 
 using namespace std;
+using namespace sf;
 
 double length(int x1, int y1, int x2, int y2)
 {
     return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 }
 
-void saveMap(int R, int x, int y)
+///////////////FILE MAP///////////////
+/*void saveMap(int R, int x, int y, int RT = 0)
 {
     ofstream fout("map.txt", std::ios_base::app);
-    fout << "R = " << R << "; x = " << x << "; y = " << y << "\n";
+    fout << "R = " << R << "; x = " << x << "; y = " << y << "; RT = " << RT << "\n";
     fout.close();
 }
 
@@ -27,14 +29,335 @@ void fileMapCleaning()
     file.open("map.txt", ios::out);
     file << "";
     file.close();
+}*/
+
+
+
+#include "sqlite3/sqlite3.h"
+
+class Database
+{
+public:
+    sqlite3 * db;
+
+    char Name[20];
+    int ID;
+    int R;
+    int x;
+    int y;
+    int Radius;
+
+    Database(const char * dbFile)
+    {
+        sqlite3_open(dbFile, & db);
+    }
+
+    ~Database()
+    {
+        sqlite3_close(db);
+    }
+
+    int count(char * sqlQuery)
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+        int count = sqlite3_column_int(stmt, 0);
+
+        sqlite3_finalize(stmt);
+        return count;
+    }
+
+    int getData(char * sqlQuery, char * name, int ID)
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, ID);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        strcpy(this->Name, name);
+        this->ID = ID;
+        this->R = sqlite3_column_int(stmt, 2);
+        this->x = sqlite3_column_int(stmt, 3);
+        this->y = sqlite3_column_int(stmt, 4);
+        this->Radius = sqlite3_column_int(stmt, 5);
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    int getDataById(char * sqlQuery, int index)
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        int i = 0;
+        while (1)
+        {
+            int rc = sqlite3_step(stmt);
+            if (SQLITE_ERROR == rc)
+            {
+                return -1;
+            }
+            else if (SQLITE_DONE == rc)
+            {
+                break;
+            }
+            else if (SQLITE_ROW == rc)
+            {
+                if (index == i)
+                {
+                    strcpy(this->Name, (char *)sqlite3_column_text(stmt, 0));
+                    this->ID = sqlite3_column_int(stmt, 1);
+                    this->R = sqlite3_column_int(stmt, 2);
+                    this->x = sqlite3_column_int(stmt, 3);
+                    this->y = sqlite3_column_int(stmt, 4);
+                    this->Radius = sqlite3_column_int(stmt, 5);
+
+                    break;
+                }
+                i++;
+            }
+        }
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    int insertData(char * sqlQuery, char * name, int ID, int R, int x, int y, int Radius)
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, ID);
+        sqlite3_bind_int(stmt, 3, R);
+        sqlite3_bind_int(stmt, 4, x);
+        sqlite3_bind_int(stmt, 5, y);
+        sqlite3_bind_int(stmt, 6, Radius);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        sqlite3_finalize(stmt);
+        return sqlite3_last_insert_rowid(db);
+    }
+
+    int deleteData(char * sqlQuery, char * name, int ID)
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, ID);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    int updateDataRadius(char * sqlQuery, char * name, int ID, int Radius) //"UPDATE Map SET Radius = ? WHERE Name = ? AND ID = ?;"
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_int(stmt, 1, Radius);
+        sqlite3_bind_text(stmt, 2, name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 3, ID);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    int updateDataID(char * sqlQuery, char * name, int ID, int newID) //"UPDATE Map SET ID = ? WHERE Name = ? AND ID = ?;"
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_int(stmt, 1, newID);
+        sqlite3_bind_text(stmt, 2, name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 3, ID);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    int updateDataCoord(char * sqlQuery, char * name, int ID, int x, int y) //"UPDATE Player SET x = ?, y = ? WHERE Name = ? AND ID = ?;"
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_int(stmt, 1, x);
+        sqlite3_bind_int(stmt, 2, y);
+        sqlite3_bind_text(stmt, 3, name, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 4, ID);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+
+    int clearData(char * sqlQuery)
+    {
+        sqlite3_stmt * stmt = NULL;
+        sqlite3_prepare_v2(db, sqlQuery, strlen(sqlQuery), &stmt, NULL);
+
+        sqlite3_bind_text(stmt, 1, "Castle", -1, SQLITE_TRANSIENT);
+
+        int rc = sqlite3_step(stmt);
+        if (SQLITE_ERROR == rc)
+        {
+            return -1;
+        }
+
+        sqlite3_finalize(stmt);
+        return 1;
+    }
+};
+
+
+
+///////////////FILE HERO///////////////
+void saveHero(char * file, int Name, int R, int x, int y)
+{
+    ofstream fout(file, std::ios_base::app);
+    fout << "Name = " << Name << "; R = " << R << "; x = " << x << "; y = " << y << "\n";
+    fout.close();
 }
 
-#include "map.h"
+void fileHeroCleaning(char * file)
+{
+    fstream fileClean;
+    fileClean.open(file, ios::out);
+    fileClean << "";
+    fileClean.close();
+}
 
-#define MAX_SPEED 0.05
+void heroCleaning(char * file, int index)
+{
+    int Name, R, x, y;
 
-using namespace std;
-using namespace sf;
+    const int len = 50, strings = 1000;
+    int countStr = 0;
+    int delIndex = -1;
+    char buffer[len][strings];
+
+    ifstream fs(file, ios::in | ios::binary);
+    while (fs.getline(buffer[countStr], 50))
+    {
+        char * pointName = strstr(buffer[countStr], "Name = ");
+        pointName += 7;
+        Name = atoi(pointName);
+
+        char * pointR = strstr(buffer[countStr], "R = ");
+        pointR += 4;
+        R = atoi(pointR);
+
+        char * pointX = strstr(buffer[countStr], "x = ");
+        pointX += 4;
+        x = atoi(pointX);
+
+        char * pointY = strstr(buffer[countStr], "y = ");
+        pointY += 4;
+        y = atoi(pointY);
+
+        if(Name == index)
+        {
+            delIndex = countStr;
+        }
+        countStr++;
+    }
+    fs.close();
+
+    fileHeroCleaning(file);
+
+    ofstream fout(file, std::ios_base::app);
+    for(int k = 0; k < countStr; k++)
+    {
+        if(k != delIndex) fout << buffer[k] << "\n";
+    }
+    fout.close();
+}
+
+bool checkPos(char * file, int posX, int posY, int index)
+{
+    int Name, R, x, y;
+
+    const int len = 50, strings = 100;
+    int countStr = 0;
+    char buffer[len][strings];
+
+    ifstream fs(file, ios::in | ios::binary);
+    while (fs.getline(buffer[countStr], 50))
+    {
+        char * pointName = strstr(buffer[countStr], "Name = ");
+        pointName += 7;
+        Name = atoi(pointName);
+
+        char * pointR = strstr(buffer[countStr], "R = ");
+        pointR += 4;
+        R = atoi(pointR);
+
+        char * pointX = strstr(buffer[countStr], "x = ");
+        pointX += 4;
+        x = atoi(pointX);
+
+        char * pointY = strstr(buffer[countStr], "y = ");
+        pointY += 4;
+        y = atoi(pointY);
+
+        if(Name != index)
+        {
+            if ( (((posX - x)*(posX - x)) + ((posY - y)*(posY - y))) <= R * R )
+            {
+                fs.close();
+                return false;
+            }
+        }
+        countStr++;
+    }
+    fs.close();
+    return true;
+}
+
+
 
 
 class Images
@@ -66,6 +389,1030 @@ public:             // private
         sprite.setOrigin(Vector2f(w/2, h/2));
     }
 };
+/////////////////HERO////////////////////////
+///////КЛАСС ИГРОКА///////
+class Player
+{
+public:
+    char Name[20];
+
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
+    int x, y, w, h, R;
+
+    int begX, begY;
+    int endX, endY;
+    int dx, dy;
+    float angle;
+    int stopAngle = 360; // float
+
+    int life = 3;
+    bool isMove, isSelect, isLive;
+    float CurrentFrame;
+
+    /// health
+    Images * scaleUpdate;
+
+    Database * db;
+
+    //float speed;
+    //int dir;
+
+    Player(String file, char * name, int ID, int positionX, int positionY, int width, int height)
+    {
+        db = new Database("Data.db");
+        scaleUpdate = new Images("Images/scaleUpdate.png", 683, 200, 54, 7);
+        strcpy(this->Name, name);
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        image.loadFromFile(file);
+        image.createMaskFromColor(Color::White);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        sprite.setTextureRect(IntRect(0, 200, w, h));
+        sprite.setOrigin(w/2, h/2);
+        R = 20;
+        CurrentFrame = 0;
+        isMove = false;
+        isSelect = false;
+        isLive = true;
+        angle = 45;
+
+        char * sqlQuery = "INSERT INTO Player (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
+        db->insertData(sqlQuery, Name, ID, R, x, y, 50);
+    }
+
+
+    void update(float time, int numImage, int posX, int posY)
+    {
+        CurrentFrame += 0.02*time;
+        if (CurrentFrame > 10) CurrentFrame -= 10;
+        sprite.setTextureRect(IntRect(w * int(CurrentFrame), numImage, w, h));
+        sprite.setPosition(posX, posY);
+    }
+
+    void stop()
+    {
+        if (-90 < angle && angle <= 0)
+            sprite.setTextureRect(IntRect(0, 280, w, h));
+        else if (-180 < angle && angle <= -90)
+            sprite.setTextureRect(IntRect(0, 120, w, h));
+        else if (0 < angle && angle <= 90)
+            sprite.setTextureRect(IntRect(0, 200, w, h));
+        else if (90 < angle && angle <= 180)
+            sprite.setTextureRect(IntRect(0, 40, w, h));
+    }
+
+    void movement(float time)
+    {
+        if (isMove)
+        {
+            int status = 1;
+
+            char * sqlQuery = "SELECT * FROM Map;";
+            for(int j = 0; j < db->count("SELECT COUNT(*) FROM Map;"); j++)
+            {
+                db->getDataById(sqlQuery, j);
+
+                if (x < -1475 + R)
+                {
+                    stopAngle = 180;
+                    status = 0;
+                    break;
+                }
+                else if (x > 2841 - R)
+                {
+                    stopAngle = 0;
+                    status = 0;
+                    break;
+                }
+                else if (y < -750 + R)
+                {
+                    stopAngle = -90;
+                    status = 0;
+                    break;
+                }
+                else if (y > 1593 - R)
+                {
+                    stopAngle = 90;
+                    status = 0;
+                    break;
+                }
+
+                if ( (((x - db->x)*(x - db->x)) + ((y - db->y)*(y - db->y))) < (db->R + 20)*(db->R + 20) )
+                {
+                    int stopX = db->x - x;
+                    int stopY = db->y - y;
+
+                    stopAngle = (180 / M_PI) * atan2(float(stopY), float(stopX));
+                    status = 0;
+                    break;
+                }
+            }
+
+            /*char buffer[50];
+            int bR, bx, by;
+
+            ifstream fin("map.txt");
+            while (fin.getline(buffer, 50))
+            {
+                char * pointR = strstr(buffer, "R = ");
+                pointR += 4;
+                bR = atoi(pointR);
+
+                char * pointX = strstr(buffer, "x = ");
+                pointX += 4;
+                bx = atoi(pointX);
+
+                char * pointY = strstr(buffer, "y = ");
+                pointY += 4;
+                by = atoi(pointY);
+                if(bR == 220) bR = 84;
+                if ( (((x - bx)*(x - bx)) + ((y - by)*(y - by))) < (bR + 20)*(bR + 20) )
+                {
+                    int stopX = bx - x;
+                    int stopY = by - y;
+
+                    stopAngle = (180 / M_PI) * atan2(float(stopY), float(stopX));
+
+                    status = 0;
+                    break;
+                }
+            }
+            fin.close();*/
+
+            if(stopAngle != 360)
+            {
+                int stopAngleR = stopAngle - 90;
+                int stopAngleL = stopAngle + 90;
+
+                if(stopAngleL > 180) stopAngleL -= 360;
+                if(stopAngleR < -180) stopAngleR += 360;
+
+                if(-90 <= stopAngle && stopAngle <= 90)
+                {
+                    if(stopAngleR <= angle && angle <= stopAngleL)
+                    {
+                        status = 0;
+                    }
+                    else
+                    {
+                        status = 1;
+                        stopAngle = 360;
+                    }
+                }
+                else
+                {
+                    if(stopAngleL <= angle && angle <= stopAngleR)
+                    {
+                        status = 1;
+                        stopAngle = 360;
+                    }
+                    else
+                    {
+                        status = 0;
+                    }
+                }
+            }
+
+            if(status == 0)
+            {
+                stop();
+                isMove = false;
+                return;
+            }
+
+            if (x != endX || y != endY)
+            {
+                if (-45 < angle && angle <= 0)
+                {
+                    if (x <= begX + abs(dy)/2)
+                        update(time, 280, x++, y--);
+                    else if (x <= endX - abs(dy)/2)
+                        update(time, 240, x++, y);
+                    else if (x <= endX)
+                        update(time, 280, x++, y--);
+                }
+                else if (-90 < angle && angle <= -45)
+                {
+                    if (y >= begY - abs(dx)/2)
+                        update(time, 280, x++, y--);
+                    else if (y >= endY + abs(dx)/2)
+                        update(time, 160, x, y--);
+                    else if (y >= endY)
+                        update(time, 280, x++, y--);
+                }
+                else if (-135 < angle && angle <= -90)
+                {
+                    if (y >= begY - abs(dx)/2)
+                        update(time, 120, x--, y--);
+                    else if (y >= endY + abs(dx)/2)
+                        update(time, 160, x, y--);
+                    else if (y >= endY)
+                        update(time, 120, x--, y--);
+                }
+                else if (-180 < angle && angle <= -135)
+                {
+                    if (x >= begX - abs(dy)/2)
+                        update(time, 120, x--, y--);
+                    else if (x >= endX + abs(dy)/2)
+                        update(time, 80, x--, y);
+                    else if (x >= endX)
+                        update(time, 120, x--, y--);
+                }
+                else if (0 < angle && angle <= 45)
+                {
+                    if (x <= begX + abs(dy)/2)
+                        update(time, 200, x++, y++);
+                    else if (x <= endX - abs(dy)/2)
+                        update(time, 240, x++, y);
+                    else if (x <= endX)
+                        update(time, 200, x++, y++);
+                }
+                else if (45 < angle && angle <= 90)
+                {
+                    if (y <= begY + abs(dx)/2)
+                        update(time, 200, x++, y++);
+                    else if (y <= endY - abs(dx)/2)
+                        update(time, 0, x, y++);
+                    else if (y <= endY)
+                        update(time, 200, x++, y++);
+                }
+                else if (90 < angle && angle <= 135)
+                {
+                    if (y <= begY + abs(dx)/2)
+                        update(time, 40, x--, y++);
+                    else if (y <= endY - abs(dx)/2)
+                        update(time, 0, x, y++);
+                    else if (y <= endY)
+                        update(time, 40, x--, y++);
+                }
+                else if (135 < angle && angle <= 180)
+                {
+                    if (x >= begX - abs(dy)/2)
+                        update(time, 40, x--, y++);
+                    else if (x >= endX + abs(dy)/2)
+                        update(time, 80, x--, y);
+                    else if (x >= endX)
+                        update(time, 40, x--, y++);
+                }
+            }
+            else
+            {
+                stop();
+                isMove = false;
+            }
+        }
+        else
+        {
+            stop();
+        }
+    }
+
+    void mouseRight()
+    {
+        begX = x;
+        begY = y;
+
+        dx = endX - begX;
+        dy = endY - begY;
+
+        angle = (180 / M_PI) * atan2(float(dy), float(dx));
+        //isSelect = false;
+        //sprite.setColor(Color::White);
+    }
+
+
+
+    void changeLife()
+    {
+        life--;
+        if(life == 0) isLive = false;
+    }
+
+    void checkLife(int RadiusTower)
+    {
+        char * sqlQuery = "SELECT * FROM Map;";
+        for(int j = 0; j < db->count("SELECT COUNT(*) FROM Map;"); j++)
+        {
+            db->getDataById(sqlQuery, j);
+            if(strcmp(db->Name, "EnemyTower") == 0)
+            {
+                if(pow(x - db->x, 2) + pow(y - db->y, 2) <= pow(db->Radius, 2))
+                {
+                    changeLife();
+                    //break; // без break, так как при установки нескольких башень урон сумируется
+                }
+            }
+            else if(strcmp(db->Name, "Fountain") == 0)
+            {
+                if(pow(x - db->x, 2) + pow(y - db->y, 2) <= pow(db->Radius, 2))
+                {
+                    if(life < 3) life++;
+                    break;
+                }
+            }
+        }
+    }
+
+    int getLife()
+    {
+        return life;
+    }
+
+
+
+    void stopHero()
+    {
+        isSelect = false;
+        sprite.setColor(Color::White);
+    }
+
+    void selectHero(int posX, int posY)
+    {
+        if(isLive == true)
+        {
+            if(pow((posX - x), 2) + pow((posY - y), 2) <= pow(R, 2)) //if( (((posX - x)*(posX - x)) + ((posY - y)*(posY - y))) <= (R)*(R) )
+            {
+                isSelect = true;
+                sprite.setColor(Color::Red);
+            }
+        }
+    }
+
+    void selectHero(int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
+    {
+        if(isLive == true)
+        {
+            if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
+                     || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
+                     || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
+                     || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
+                    )
+            {
+                isSelect = true;
+                sprite.setColor(Color::Red);
+            }
+        }
+    }
+
+    void endPosHero(int posX, int posY, int index)
+    {
+        if(isLive == true && isSelect == true)
+        {
+            heroCleaning("hero.txt", index);
+            isMove = true;
+
+            while(checkPos("hero.txt", posX, posY, index) == false)
+            {
+                int vX = -1 + rand() % 2;
+                posX += vX * (20 + rand() % 10);
+                int vY = -1 + rand() % 2;
+                posY += vY * (20 + rand() % 10);
+            }
+
+            endX = posX;
+            endY = posY;
+
+            mouseRight();
+            saveHero("hero.txt", index, R, endX, endY);
+        }
+    }
+
+    void updateHero(float time)
+    {
+        if(isLive == true) movement(time);
+    }
+
+    void drawHero(RenderWindow & window)
+    {
+        if(isLive == true)
+        {
+            scaleUpdate->sprite.setPosition(x + 17, y - 25);
+            scaleUpdate->sprite.setTextureRect(IntRect(18 * (3 - life), 0, 18, 7));
+            window.draw(scaleUpdate->sprite);
+            window.draw(sprite);
+        }
+    }
+
+    int getX()
+    {
+        return x;
+    }
+
+    int getY()
+    {
+        return y;
+    }
+};
+
+/*class Hero
+{
+public:
+    int maxCount = 7;
+    Player * hero[7];
+    int index = -1;
+
+    Hero(String file, int positionX, int positionY, int width, int height)
+    {
+        hero[0] = new Player(file, positionX - 30, positionY - 50, width, height);
+        hero[1] = new Player(file, positionX + 20, positionY - 50, width, height);
+        hero[2] = new Player(file, positionX - 50, positionY, width, height);
+        hero[3] = new Player(file, positionX, positionY, width, height);
+        hero[4] = new Player(file, positionX + 50, positionY, width, height);
+        hero[5] = new Player(file, positionX - 30, positionY + 50, width, height);
+        hero[6] = new Player(file, positionX + 20, positionY + 50, width, height);
+    }
+
+    ~Hero()
+    {
+        for(int i = 0; i < maxCount; i++)
+        {
+            delete hero[i];
+        }
+    }
+
+    void stop()
+    {
+        bool check = false;
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            if (hero[i]->isSelect ==  true)
+            {
+                check = true;
+                break;
+            }
+        }
+
+        if (check == true)
+        {
+            for(int i = 0; i < maxCount; i++)
+            {
+                hero[i]->isSelect = false;
+                hero[i]->sprite.setColor(Color::White);
+            }
+        }
+    }
+
+    void select(int posX, int posY)
+    {
+        bool check = false;
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            if ( (((posX - hero[i]->x)*(posX - hero[i]->x)) + ((posY - hero[i]->y)*(posY - hero[i]->y))) <= (hero[i]->R)*(hero[i]->R) )
+            {
+                check = true;
+                break;
+            }
+        }
+
+        if (check == true)
+        {
+            for(int i = 0; i < maxCount; i++)
+            {
+                hero[i]->isSelect = true;
+                hero[i]->sprite.setColor(Color::Red);
+            }
+        }
+    }
+
+    void select(int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
+    {
+        bool check = false;
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            if (((pressed_LKM_X <= hero[i]->x) && (hero[i]->x <= released_LKM_X) && (pressed_LKM_Y <= hero[i]->y) && (hero[i]->y <= released_LKM_Y))
+                     || ((released_LKM_X <= hero[i]->x) && (hero[i]->x <= pressed_LKM_X) && (released_LKM_Y <= hero[i]->y) && (hero[i]->y <= pressed_LKM_Y))
+                     || ((pressed_LKM_X <= hero[i]->x) && (pressed_LKM_Y >= hero[i]->y) && (released_LKM_X >= hero[i]->x) && (released_LKM_Y <= hero[i]->y))
+                     || ((pressed_LKM_X >= hero[i]->x) && (pressed_LKM_Y <= hero[i]->y) && (released_LKM_X <= hero[i]->x) && (released_LKM_Y >= hero[i]->y))
+                    )
+            {
+                check = true;
+                break;
+            }
+        }
+
+        if (check == true)
+        {
+            for(int i = 0; i < maxCount; i++)
+            {
+                hero[i]->isSelect = true;
+                hero[i]->sprite.setColor(Color::Red);
+            }
+        }
+    }
+
+    void endPos(int posX, int posY, int index)
+    {
+        int check = 0;
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            if(hero[i]->isSelect)
+            {
+                check++;
+            }
+        }
+        if(check == maxCount)
+        {
+            heroCleaning(index);
+
+            for(int i = 0; i < maxCount; i++)
+            {
+                hero[i]->isMove = true;
+            }
+
+            while(checkPos(posX, posY, index) == false)
+            {
+                int vX = -1 + rand() % 2;
+                posX += vX * (20 + rand() % 10);
+                int vY = -1 + rand() % 2;
+                posY += vY * (20 + rand() % 10);
+            }
+
+            hero[0]->endX = posX - 30;
+            hero[0]->endY = posY - 50;
+
+            hero[1]->endX = posX + 20;
+            hero[1]->endY = posY - 50;
+
+            hero[2]->endX = posX - 50;
+            hero[2]->endY = posY;
+
+            hero[3]->endX = posX;
+            hero[3]->endY = posY;
+
+            hero[4]->endX = posX + 50;
+            hero[4]->endY = posY;
+
+            hero[5]->endX = posX - 30;
+            hero[5]->endY = posY + 50;
+
+            hero[6]->endX = posX + 20;
+            hero[6]->endY = posY + 50;
+
+
+            for(int i = 0; i < maxCount; i++)
+            {
+                //hero[i]->mouseRight(posX, posY);
+            }
+            saveHero(index, hero[3]->R, hero[3]->endX, hero[3]->endY);
+        }
+    }
+
+    void update(float time)
+    {
+        for(int i = 0; i < maxCount; i++)
+        {
+            //hero[i]->movement(time);
+        }
+    }
+
+    void draw(RenderWindow & window)
+    {
+        for(int i = 0; i < maxCount; i++)
+        {
+            window.draw(hero[i]->sprite);
+        }
+    }
+};*/
+
+class Enemy
+{
+public:
+    Image image;
+    Texture texture;
+    Sprite sprite;
+
+    int x, y, w, h, R;
+
+    int begX, begY;
+    int endX, endY;
+    int dx, dy;
+    float angle;
+    float stopAngle = 360;
+
+    int life = 3;
+    bool isMove, isSelect, isLive;
+    float CurrentFrame;
+
+    /// health
+    Images * scaleUpdate;
+
+    Database * db;
+
+    //float speed;
+    //int dir;
+
+    Enemy(String file, int positionX, int positionY, int width, int height)
+    {
+        db = new Database("Data.db");
+        scaleUpdate = new Images("Images/scaleUpdate.png", 683, 200, 54, 7);
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        image.loadFromFile(file);
+        image.createMaskFromColor(Color::White);
+        texture.loadFromImage(image);
+        sprite.setTexture(texture);
+        sprite.setPosition(positionX, positionY);
+        sprite.setTextureRect(IntRect(0, 200, w, h));
+        sprite.setOrigin(w/2, h/2);
+        sprite.setColor(Color(80, 80, 80));
+        R = 20;
+        CurrentFrame = 0;
+        isMove = false;
+        isSelect = false;
+        isLive = true;
+        angle = 45;
+    }
+
+
+    void update(float time, int numImage, int posX, int posY)
+    {
+        CurrentFrame += 0.02*time;
+        if (CurrentFrame > 10) CurrentFrame -= 10;
+        sprite.setTextureRect(IntRect(w * int(CurrentFrame), numImage, w, h));
+        sprite.setPosition(posX, posY);
+    }
+
+    void stop()
+    {
+        if (-90 < angle && angle <= 0)
+            sprite.setTextureRect(IntRect(0, 280, w, h));
+        else if (-180 < angle && angle <= -90)
+            sprite.setTextureRect(IntRect(0, 120, w, h));
+        else if (0 < angle && angle <= 90)
+            sprite.setTextureRect(IntRect(0, 200, w, h));
+        else if (90 < angle && angle <= 180)
+            sprite.setTextureRect(IntRect(0, 40, w, h));
+    }
+
+    void movement(float time)
+    {
+        if (isMove)
+        {
+            int status = 1;
+
+            char * sqlQuery = "SELECT * FROM Map;";
+            for(int j = 0; j < db->count("SELECT COUNT(*) FROM Map;"); j++)
+            {
+                db->getDataById(sqlQuery, j);
+
+                if ( (((x - db->x)*(x - db->x)) + ((y - db->y)*(y - db->y))) < (db->R + 20)*(db->R + 20) )
+                {
+                    int stopX = db->x - x;
+                    int stopY = db->y - y;
+
+                    stopAngle = (180 / M_PI) * atan2(float(stopY), float(stopX));
+
+                    status = 0;
+                    break;
+                }
+            }
+
+            /*char buffer[50];
+            int bR, bx, by;
+
+            ifstream fin("map.txt");
+            while (fin.getline(buffer, 50))
+            {
+                char * pointR = strstr(buffer, "R = ");
+                pointR += 4;
+                bR = atoi(pointR);
+
+                char * pointX = strstr(buffer, "x = ");
+                pointX += 4;
+                bx = atoi(pointX);
+
+                char * pointY = strstr(buffer, "y = ");
+                pointY += 4;
+                by = atoi(pointY);
+                if(bR == 220) bR = 84;
+                if ( (((x - bx)*(x - bx)) + ((y - by)*(y - by))) < (bR + 20)*(bR + 20) )
+                {
+                    int stopX = bx - x;
+                    int stopY = by - y;
+
+                    stopAngle = (180 / M_PI) * atan2(float(stopY), float(stopX));
+
+                    status = 0;
+                    break;
+                }
+            }
+            fin.close();*/
+
+            if(stopAngle != 360)
+            {
+                int stopAngleR = stopAngle - 90;
+                int stopAngleL = stopAngle + 90;
+
+                if(stopAngleL > 180) stopAngleL -= 360;
+                if(stopAngleR < -180) stopAngleR += 360;
+
+                if(-90 <= stopAngle && stopAngle <= 90)
+                {
+                    if(stopAngleR <= angle && angle <= stopAngleL)
+                    {
+                        status = 0;
+                    }
+                    else
+                    {
+                        status = 1;
+                        stopAngle = 360;
+                    }
+                }
+                else
+                {
+                    if(stopAngleL <= angle && angle <= stopAngleR)
+                    {
+                        status = 1;
+                        stopAngle = 360;
+                    }
+                    else
+                    {
+                        status = 0;
+                    }
+                }
+            }
+
+            if(status == 0)
+            {
+                stop();
+                isMove = false;
+                return;
+            }
+
+            if (x != endX || y != endY)
+            {
+                if (-45 < angle && angle <= 0)
+                {
+                    if (x <= begX + abs(dy)/2)
+                        update(time, 280, x++, y--);
+                    else if (x <= endX - abs(dy)/2)
+                        update(time, 240, x++, y);
+                    else if (x <= endX)
+                        update(time, 280, x++, y--);
+                }
+                else if (-90 < angle && angle <= -45)
+                {
+                    if (y >= begY - abs(dx)/2)
+                        update(time, 280, x++, y--);
+                    else if (y >= endY + abs(dx)/2)
+                        update(time, 160, x, y--);
+                    else if (y >= endY)
+                        update(time, 280, x++, y--);
+                }
+                else if (-135 < angle && angle <= -90)
+                {
+                    if (y >= begY - abs(dx)/2)
+                        update(time, 120, x--, y--);
+                    else if (y >= endY + abs(dx)/2)
+                        update(time, 160, x, y--);
+                    else if (y >= endY)
+                        update(time, 120, x--, y--);
+                }
+                else if (-180 < angle && angle <= -135)
+                {
+                    if (x >= begX - abs(dy)/2)
+                        update(time, 120, x--, y--);
+                    else if (x >= endX + abs(dy)/2)
+                        update(time, 80, x--, y);
+                    else if (x >= endX)
+                        update(time, 120, x--, y--);
+                }
+                else if (0 < angle && angle <= 45)
+                {
+                    if (x <= begX + abs(dy)/2)
+                        update(time, 200, x++, y++);
+                    else if (x <= endX - abs(dy)/2)
+                        update(time, 240, x++, y);
+                    else if (x <= endX)
+                        update(time, 200, x++, y++);
+                }
+                else if (45 < angle && angle <= 90)
+                {
+                    if (y <= begY + abs(dx)/2)
+                        update(time, 200, x++, y++);
+                    else if (y <= endY - abs(dx)/2)
+                        update(time, 0, x, y++);
+                    else if (y <= endY)
+                        update(time, 200, x++, y++);
+                }
+                else if (90 < angle && angle <= 135)
+                {
+                    if (y <= begY + abs(dx)/2)
+                        update(time, 40, x--, y++);
+                    else if (y <= endY - abs(dx)/2)
+                        update(time, 0, x, y++);
+                    else if (y <= endY)
+                        update(time, 40, x--, y++);
+                }
+                else if (135 < angle && angle <= 180)
+                {
+                    if (x >= begX - abs(dy)/2)
+                        update(time, 40, x--, y++);
+                    else if (x >= endX + abs(dy)/2)
+                        update(time, 80, x--, y);
+                    else if (x >= endX)
+                        update(time, 40, x--, y++);
+                }
+            }
+            else
+            {
+                stop();
+                isMove = false;
+            }
+        }
+        else
+        {
+            stop();
+        }
+    }
+
+    void mouseRight()
+    {
+        begX = x;
+        begY = y;
+
+        dx = endX - begX;
+        dy = endY - begY;
+
+        angle = (180 / M_PI) * atan2(float(dy), float(dx));
+        //isSelect = false;
+        //sprite.setColor(Color::White);
+    }
+
+
+
+    void changeLife()
+    {
+        life--;
+        if(life == 0) isLive = false;
+    }
+
+    void checkLife(int RadiusTower) //убрать входные параметры
+    {
+        char * sqlQuery = "SELECT * FROM Map;";
+        for(int j = 0; j < db->count("SELECT COUNT(*) FROM Map;"); j++)
+        {
+            db->getDataById(sqlQuery, j);
+            if(strcmp(db->Name, "Tower") == 0)
+            {
+                if(pow(x - db->x, 2) + pow(y - db->y, 2) <= pow(db->Radius, 2))
+                {
+                    changeLife();
+                    //break; // без break, так как при установки нескольких башень урон сумируется
+                }
+            }
+        }
+
+        /*char buffer[50];
+        int bR, bx, by;
+
+        ifstream fin("map.txt");
+        while (fin.getline(buffer, 50))
+        {
+            char * pointR = strstr(buffer, "R = ");
+            pointR += 4;
+            bR = atoi(pointR);
+
+            char * pointX = strstr(buffer, "x = ");
+            pointX += 4;
+            bx = atoi(pointX);
+
+            char * pointY = strstr(buffer, "y = ");
+            pointY += 4;
+            by = atoi(pointY);
+
+            if(bR == 53)
+            {
+                if(pow(x - bx, 2) + pow(y - by, 2) <= pow(RadiusTower, 2))
+                {
+                    if(life == 1) isLive = false;
+                    life--;
+                    break;
+                }
+            }
+        }
+        fin.close();*/
+    }
+
+    bool checkLife(int posX, int posY)
+    {
+        if(pow(posX - x, 2) + pow(posY - y, 2) <= 2500)
+        {
+            changeLife();
+            return true;
+        }
+        return false;
+    }
+
+    int getLife()
+    {
+        return life;
+    }
+
+
+    /*void stopEnemy()
+    {
+        isSelect = false;
+        sprite.setColor(Color::White);
+    }
+
+    void selectEnemy(int posX, int posY)
+    {
+        if(pow((posX - x), 2) + pow((posY - y), 2) <= pow(R, 2)) //if( (((posX - x)*(posX - x)) + ((posY - y)*(posY - y))) <= (R)*(R) )
+        {
+            isSelect = true;
+            sprite.setColor(Color::Red);
+        }
+    }
+
+    void selectEnemy(int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
+    {
+        if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
+                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
+                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
+                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
+                )
+        {
+            isSelect = true;
+            sprite.setColor(Color::Red);
+        }
+    }*/
+
+    void endPosEnemy(int posX, int posY, int index)
+    {
+        if(isLive == true)
+        {
+            heroCleaning("enemy.txt", index);
+            isMove = true;
+
+            while(checkPos("enemy.txt", posX, posY, index) == false)
+            {
+                int vX = -1 + rand() % 2;
+                posX += vX * (20 + rand() % 10);
+                int vY = -1 + rand() % 2;
+                posY += vY * (20 + rand() % 10);
+            }
+
+            endX = posX;
+            endY = posY;
+
+            mouseRight();
+            saveHero("enemy.txt", index, R, endX, endY);
+        }
+    }
+
+    void updateEnemy(float time)
+    {
+        if(isLive == true) movement(time);
+    }
+
+    void drawEnemy(RenderWindow & window)
+    {
+        if(isLive == true)
+        {
+            scaleUpdate->sprite.setPosition(x + 17, y - 25);
+            scaleUpdate->sprite.setTextureRect(IntRect(18 * (3 - life), 0, 18, 7));
+            window.draw(scaleUpdate->sprite);
+            window.draw(sprite);
+        }
+    }
+};
+
+// обновить класс игрока:
+// поправить спрайт
+// исправить разность между скоростями по диагонали и по катетам (не критично!)
+
+// скрол карты по диагонали (не критично!)
+// увеличить карту
+// отделить выдиление прямоугольником от выбора обьектов
+
+// переписать сохрание игрока и зданий в базу дынных, потому что сохранение происходит неправильно !!! \
+   когда персонаж стоит ровно под сданием, то он не может двигаться в любую из сторон !!!
+// убрать получение денег с некоторых зданий !!!
+// добавить жизнь и здоровье персонажа !!!
+// добавить плюшки для других зданий !!!
+// при нажатии на башню или фонтан, прорисовывать круг "разброса"
+// добавить радиус башень !!!
+// башни должны быть только по одному игроку, а не по всем сразу !!!
+// замки врага разместить на задний план !!!
+// ограеичить проходимость по краям карты !!!
+// создать миникарту с возможностью тп !!!
+// зависимость вражеских юнитов от вражеских строений
+
+/////////////////BUILDING////////////////////
 
 void menu(RenderWindow & window);
 void game(RenderWindow & window);
@@ -73,11 +1420,11 @@ void settings(RenderWindow & window);
 
 void menu(RenderWindow & window)
 {
-    Images Background("Background.png");
-    Images NewGame("NewGame.png");
-    Images LoadGame("LoadGame.png");
-    Images SettingsGame("SettingsGame.png");
-    Images QuitGame("QuitGame.png");
+    Images Background("Images/Background.png");
+    Images NewGame("Images/NewGame.png");
+    Images LoadGame("Images/LoadGame.png");
+    Images SettingsGame("Images/SettingsGame.png");
+    Images QuitGame("Images/QuitGame.png");
 
     bool isMenu = true;
     int menuNum = 0;
@@ -154,8 +1501,8 @@ void menu(RenderWindow & window)
 
 void settings(RenderWindow & window)
 {
-    Images Settings("Settings.png");
-    Images SettingsBackground("SettingsBackground.png");
+    Images Settings("Images/Settings.png");
+    Images SettingsBackground("Images/SettingsBackground.png");
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
@@ -226,12 +1573,17 @@ class Building
 public:
     ImagesBuild ** building;
 
+    char Name[20];
+    Database * db;
+
     int maxCount;
     int index = -1;
     //int coins = 0;
 
-    Building(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
+    Building(String file, char * name, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
     {
+        db = new Database("Data.db");
+        strcpy(this->Name, name);
         this->maxCount = maxCount;
         //this->coins = coins;
         building = new ImagesBuild* [maxCount];
@@ -254,7 +1606,7 @@ public:
 
     int checkPosition(int posX, int posY)
     {
-        for(int i = 0; i < maxCount; i++)
+        for(int i = 0; i < index + 1; i++) // раньше было до maxCount, при удалени обьекта оставался выбор его улучшений
         {
             if ( (((posX - building[i]->x)*(posX - building[i]->x)) + ((posY - building[i]->y)*(posY - building[i]->y))) <= (building[i]->R)*(building[i]->R) )
             {
@@ -280,8 +1632,6 @@ public:
             return 5000;
     }
 
-
-
     void createAndMove(RenderWindow & window, int posX, int posY)
     {
         if (index < maxCount - 1)
@@ -295,9 +1645,12 @@ public:
         }
     }
 
-    void deleteBuildingIndex(int indexBuilding)
+    void deleteBuildingIndex(int indexBuilding) // db // change
     {
-        int RM, xM, yM;
+        char * sqlQuery = "DELETE FROM Map WHERE Name = ? AND ID = ?;";
+        db->deleteData(sqlQuery, Name, indexBuilding); // change
+
+        /*int RM, xM, yM;
 
         const int len = 50, strings = 50;
         int countStr = 0;
@@ -334,7 +1687,7 @@ public:
         {
             if(k != delIndex) fout << buffer[k] << "\n";
         }
-        fout.close();
+        fout.close();*/
 
         int x, y, w, h, R, coins;
         bool isMove, isCreate, isLive;
@@ -342,6 +1695,8 @@ public:
         Image image;
         Texture texture;
         Sprite sprite;
+
+        char * sqlQueryUp = "UPDATE Map SET ID = ? WHERE Name = ? AND ID = ?;";
 
         for(int i = indexBuilding; i < index; i++)
         {
@@ -376,6 +1731,8 @@ public:
             building[i]->isCreate = isCreate;
             building[i]->isLive = isLive;
             building[i]->isMove = isMove;
+
+            db->updateDataID(sqlQueryUp, Name, i + 1, i);
         }
 
         building[index]->isCreate = false;
@@ -398,7 +1755,7 @@ public:
         }
     }
 
-    bool build(int Radius, int posX, int posY)
+    bool build(int Radius, int posX, int posY) // db
     {
         if(index > -1)
         {
@@ -406,14 +1763,30 @@ public:
             {
                 building[index]->isMove = false;
                 building[index]->setPosition(Radius, posX, posY);
-                saveMap(Radius, posX, posY);
+                //saveMap(Radius, posX, posY);
+
+                char * sqlQuery = "INSERT INTO Map (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
+
+                if(strcmp(Name, "Ambar") == 0)
+                {
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 220);
+                }
+                else if(strcmp(Name, "Fountain") == 0 || strcmp(Name, "Tower") == 0)
+                {
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 200);
+                }
+                else
+                {
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 0);
+                }
+
                 return true;
             }
         }
         return false;
     }
 
-    void moveAndDraw(RenderWindow & window, int Radius, int posX, int posY)
+    void moveAndDraw(RenderWindow & window, int Radius, int posX, int posY) // db // change
     {
         char buffer[50];
         int R, x, y;
@@ -426,7 +1799,33 @@ public:
                 {
                     building[index]->sprite.setPosition(posX, posY);
 
-                    ifstream fin("map.txt");
+                    char * sqlQuery = "SELECT * FROM Map;";
+                    for(int j = 0; j < db->count("SELECT COUNT(*) FROM Map;"); j++)
+                    {
+                        db->getDataById(sqlQuery, j);
+                        if(strcmp(db->Name, "Ambar") == 0) db->R = db->Radius; // change
+
+                        // Проверяем краи карты и ближайшие обьекты на карте
+                        if (posX < -1475 + Radius || posX > 2841 - Radius || posY < -750 + Radius || posY > 1593 - Radius)
+                        {
+                            building[index]->sprite.setColor(Color::Red);
+                            building[index]->isLive = false;
+                            break;
+                        }
+                        else if (db->R + Radius < length(posX, posY, db->x, db->y))
+                        {
+                            building[index]->sprite.setColor(Color::White);
+                            building[index]->isLive = true;
+                        }
+                        else
+                        {
+                            building[index]->sprite.setColor(Color::Red);
+                            building[index]->isLive = false;
+                            break;
+                        }
+                    }
+
+                    /*ifstream fin("map.txt");
                     while (fin.getline(buffer, 50))
                     {
                         char * pointR = strstr(buffer, "R = ");
@@ -453,7 +1852,7 @@ public:
                             break;
                         }
                     }
-                    fin.close();
+                    fin.close();*/
                 }
                 window.draw(building[i]->sprite);
             }
@@ -484,20 +1883,200 @@ public:
     }
 };
 
+class BuildingEnemy
+{
+public:
+    ImagesBuild ** building;
+
+    char Name[20];
+    Database * db;
+
+    int maxCount;
+    int index = -1;
+    //int coins = 0;
+
+    BuildingEnemy(String file, char * name, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
+    {
+        db = new Database("Data.db");
+        strcpy(this->Name, name);
+        this->maxCount = maxCount;
+        //this->coins = coins;
+        building = new ImagesBuild* [maxCount];
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            building[i] = new ImagesBuild(file, positionX, positionY, width, height, coins);
+        }
+    }
+
+    ~BuildingEnemy()
+    {
+        for (int i = 0; i < maxCount; i++)
+        {
+            delete building[i];
+        }
+        delete [] building;
+    }
+
+
+    int getX(int i)
+    {
+        return building[i]->x;
+    }
+
+    int getY(int i)
+    {
+        return building[i]->y;
+    }
+
+    /*int setRadiusTower(int i, int RadiusTower)
+    {
+        building[i]->RadiusTower += RadiusTower;
+    }*/
+
+    void create(int Radius, int posX, int posY)
+    {
+        if (index < maxCount - 1)
+        {
+            index++;
+            building[index]->isLive = true;
+            building[index]->isCreate = true;
+            building[index]->sprite.setPosition(posX, posY);
+
+            char * sqlQuery = "INSERT INTO Map (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
+            db->insertData(sqlQuery, Name, 0, Radius, posX, posY, 200);
+        }
+    }
+
+    void deleteBuildingIndex(int indexBuilding) // db // change
+    {
+        char * sqlQuery = "DELETE FROM Map WHERE Name = ? AND ID = ?;";
+        db->deleteData(sqlQuery, Name, indexBuilding); // change
+
+        int x, y, w, h, R, coins;
+        bool isMove, isCreate, isLive;
+
+        Image image;
+        Texture texture;
+        Sprite sprite;
+
+        char * sqlQueryUp = "UPDATE Map SET ID = ? WHERE Name = ? AND ID = ?;";
+
+        for(int i = indexBuilding; i < index; i++)
+        {
+            ////////////////////////////////////////////
+            x = building[i + 1]->x;
+            y = building[i + 1]->y;
+            w = building[i + 1]->w;
+            h = building[i + 1]->h;
+            R = building[i + 1]->R;
+            coins = building[i + 1]->coins;
+
+            image = building[i + 1]->image;
+            texture = building[i + 1]->texture;
+            sprite = building[i + 1]->sprite;
+
+            isCreate = building[i + 1]->isCreate;
+            isLive = building[i + 1]->isLive;
+            isMove = building[i + 1]->isMove;
+
+            ////////////////////////////////////////////
+            building[i]->x = x;
+            building[i]->y = y;
+            building[i]->w = w;
+            building[i]->h = h;
+            building[i]->R = R;
+            building[i]->coins = coins;
+
+            building[i]->image = image;
+            building[i]->texture = texture;
+            building[i]->sprite = sprite;
+
+            building[i]->isCreate = isCreate;
+            building[i]->isLive = isLive;
+            building[i]->isMove = isMove;
+
+            db->updateDataID(sqlQueryUp, Name, i + 1, i);
+        }
+
+        building[index]->isCreate = false;
+        building[index]->isLive = false;
+        building[index]->isMove = false;
+
+        index--;
+    }
+
+    void deleteBuilding()
+    {
+        if(index > -1)
+        {
+            if(building[index]->isMove)
+            {
+                building[index]->isCreate = false;
+                index--;
+            }
+        }
+    }
+
+    bool build(int Radius, int posX, int posY) // db
+    {
+        if(index > -1)
+        {
+            if(building[index]->isLive)
+            {
+                building[index]->isMove = false;
+                building[index]->setPosition(Radius, posX, posY);
+                //saveMap(Radius, posX, posY);
+
+                char * sqlQuery = "INSERT INTO Map (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
+
+                if(strcmp(Name, "Ambar") == 0)
+                {
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 220);
+                }
+                else if(strcmp(Name, "Fountain") == 0 || strcmp(Name, "Tower") == 0)
+                {
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 200);
+                }
+                else
+                {
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 0);
+                }
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    int getIndex()
+    {
+        return index;
+    }
+
+    void draw(RenderWindow & window)
+    {
+        for(int i = 0; i < maxCount; i++)
+        {
+            window.draw(building[i]->sprite);
+        }
+    }
+};
+
 void game(RenderWindow & window)
 {
-    fileMapCleaning();
+    //fileMapCleaning();
+    fileHeroCleaning("hero.txt");
+    fileHeroCleaning("enemy.txt");
 
-    //Images map("map.png");
-    //Images oz("Map/OB5.png", 100, 100);
-    Images miniMap("Images/miniMap2.png", 0, 510);
+    Images miniMap("Images/miniMap5.png", 0, 510);
 
-    Building cave("Building/cave.png", 0, 0, 90, 60, 5, 25);
-    Building building("Building/building.png", 0, 0, 95, 88, 5, 50);
-    Building house("Building/house.png", 0, 0, 140, 115, 5, 10);
-    Building fountain("Building/fountain.png", 0, 0, 60, 80, 5);
-    Building tower("Building/tower.png", 0, 0, 75, 105, 5);
-    Building ambar("Building/ambar.png", 0, 0, 165, 134, 5, 10);
+    Building cave("Building/cave.png", "Cave", 0, 0, 90, 60, 5, 25);
+    Building building("Building/building.png", "Building", 0, 0, 95, 88, 5, 50);
+    Building house("Building/house.png", "House", 0, 0, 140, 115, 5, 10);
+    Building fountain("Building/fountain.png", "Fountain", 0, 0, 60, 80, 5);
+    Building tower("Building/tower.png", "Tower", 0, 0, 75, 105, 5);
+    Building ambar("Building/ambar.png", "Ambar", 0, 0, 165, 134, 5, 10);
 
     Images background("Images/BGG1.png", -1500, -850);
     Images castle("Images/CastleNew.png", 683, 384, 250, 268);
@@ -516,6 +2095,7 @@ void game(RenderWindow & window)
     Images selection2("Images/selection2Update1.png", 0, 0, 64, 164);//80->64
     Images selection3House("Images/selection3House.png", 0, 0, 160, 164);
     Images selection3Ambar("Images/selection3Ambar.png", 0, 0, 160, 164);
+
     int indexCave = -1;
     int indexBuilding = -1;
     int indexHouse = -1;
@@ -523,31 +2103,83 @@ void game(RenderWindow & window)
     int indexTower = -1;
     int indexAmbar = -1;
 
-    saveMap(135, 683, 384);
+    //saveMap(135, 683, 384); // R - можно изменить
 
     Font font;
     font.loadFromFile("CyrilicOld.ttf");
     Text text("", font, 20);
-
-    ////shape////
-    /*CircleShape shape(135);
-    shape.setFillColor(Color::Transparent);
-
-    shape.setOrigin(135, 135);
-    shape.setOutlineThickness(2);
-    shape.setOutlineColor(Color(250, 150, 100));*/
 
     bool pressed_selection_building = false;
     bool pressed_selection = false;
     int isSelect = 0;
 
     char money[10] = "0";
-    int coins = 10000;
+    int coins = 100000;
 
     Clock clock;
     Clock clockTimer;
     float timer = 0;
     View view(FloatRect(0, 0, 1366, 768));
+
+    //// heros ////
+    list<Player*> heros;
+    list<Player*> :: iterator it;
+
+    //// rectangle BEG ////
+    RectangleShape rectangle(Vector2f(0, 0));
+    rectangle.setSize(Vector2f(0, 0));
+    rectangle.setFillColor(Color::Transparent);
+    rectangle.setOutlineThickness(2);
+    rectangle.setOutlineColor(Color(250, 150, 100));
+
+    bool pressed_rectangle = false;
+    //// rectangle END ////
+
+    int pressed_LKM_X;
+    int pressed_LKM_Y;
+
+    int released_LKM_X;
+    int released_LKM_Y;
+
+
+
+    BuildingEnemy EnemyCastle("Building/Enemy's_castle.png", "EnemyCastle", -1300, -500, 256, 206, 5, 0);
+    EnemyCastle.create(135, -1300, -500);
+
+    BuildingEnemy boiler("Building/boiler.png", "Boiler", -1100, -600, 128, 80, 5, 0);
+    boiler.create(40, -1100, -600);
+    boiler.create(40, -1400, -250);
+
+    BuildingEnemy EnemyTower("Building/Enemy's_tower.png", "EnemyTower", -1000, -200, 82, 102, 5, 0);
+    EnemyTower.create(55, -1000, -200);
+
+
+
+    //// Enemy ////
+    list<Enemy*> enemy;
+    list<Enemy*> :: iterator itEnemy;
+    //enemy.push_back(new Enemy("Images/hero_40x40.png", -1325, -200, 40, 40));
+    int Step = 0;
+
+    const char * dbFile = "Data.db";
+    Database db(dbFile);
+
+    //char * sqlQuery = "INSERT INTO Map (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
+    //db.insertData(sqlQuery, "Oleg", 5, 12, 13, 14, 15);
+    //char * sqlQuery = "SELECT * FROM Map WHERE Name = ? AND ID = ?;";  //"UPDATE %s SET Name = ?, Surname = ? WHERE ID = ?;"
+    //db.getData(sqlQuery, "Castle", 1);
+
+    Vector2i pixelPosWindow;
+    Vector2f posWindow;
+
+    ////shape////
+    /*CircleShape shape(110);
+    shape.setFillColor(Color::Transparent);
+
+    shape.setOrigin(110, 110);
+    shape.setOutlineThickness(2);
+    shape.setOutlineColor(Color(250, 150, 100));
+    shape.setPosition(130, 634);*/
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
@@ -556,14 +2188,104 @@ void game(RenderWindow & window)
         time = time/800;
 
         timer += clockTimer.getElapsedTime().asSeconds();
-        if(timer > 200)//2000
+        if(timer > 200) //2000
         {
             if(coins < 1000000000) coins += 10 + cave.getCoins() + building.getCoins() + house.getCoins() + ambar.getCoins();
             sprintf(money, "%i", coins);
             timer = 0;
+
+            for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++)
+            {
+                (*itEnemy)->checkLife(0); // без входных параметров
+            }
+
+            for (it = heros.begin(); it != heros.end(); it++)
+            {
+                (*it)->checkLife(0); // без входных параметров
+            }
+
+            // Битва между героями
+            for (it = heros.begin(); it != heros.end(); it++)
+            {
+                for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++)
+                {
+                    if((*itEnemy)->checkLife((*it)->getX(), (*it)->getY()) == true)
+                    {
+                        (*it)->changeLife();
+                        if((*it)->getLife() == 0) heros.remove(*it);
+                        if((*itEnemy)->getLife() == 0) enemy.remove(*itEnemy);
+                    }
+                }
+            }
+
             clockTimer.restart();
         }
 
+        if(Step < 100) Step++;
+        else Step = 0;
+
+        if(Step == 1)
+        {
+            if(enemy.size() < 40) enemy.push_back(new Enemy("Images/hero_40x40.png", -1320, -220, 40, 40));
+
+            int i = 0;
+            int k = 0;
+
+            for(itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
+            {
+                if(i < 10)
+                {
+                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -600, i);
+                    if(k == 10) k = 0;
+                }
+                else if(i >= 10 && i < 20)
+                {
+                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -560, i);
+                    if(k == 10) k = 0;
+                }
+                else if(i >= 20 && i < 30)
+                {
+                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -520, i);
+                    if(k == 10) k = 0;
+                }
+                else if(i >= 30 && i < 40)
+                {
+                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -480, i);
+                    if(k == 10) k = 0;
+                }
+            }
+        }
+
+/*
+        if(Step == 500)
+        {
+            int i = 0;
+            for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
+            {
+                (*itEnemy)->endPosEnemy(-1100, -250, i);
+            }
+        }
+        if(Step == 1000)
+        {
+            int i = 0;
+            for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
+            {
+                (*itEnemy)->endPosEnemy(-1200, -300, i);
+            }
+        }
+        if(Step == 1500)
+        {
+            int i = 0;
+            for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
+            {
+                (*itEnemy)->endPosEnemy(-1000, -600, i);
+            }
+            Step = 0;
+            enemy.push_back(new Enemy("Images/hero_40x40.png", -1325, -200, 40, 40));
+        }
+*/
+
+        // Координаты относительно пространства
         Vector2i pixelPos = Mouse::getPosition(window);
         Vector2f pos = window.mapPixelToCoords(pixelPos);
 
@@ -574,11 +2296,37 @@ void game(RenderWindow & window)
             {
                 window.close();
             }
+
             if (event.type == Event::MouseButtonPressed)
             {
                 if (event.key.code == Mouse::Left)
                 {
-                    pressed_selection_building = true;
+                    // Останавливаю прорисовку при движении обьекта ( Сброс обьекта который нажат )
+                    isSelect = 0;
+
+                    cave.deleteBuilding();
+                    building.deleteBuilding();
+                    house.deleteBuilding();
+                    fountain.deleteBuilding();
+                    tower.deleteBuilding();
+                    ambar.deleteBuilding();
+
+
+                    for (it = heros.begin(); it != heros.end(); it++)
+                    {
+                        (*it)->stopHero();
+                    }
+
+                    for (it = heros.begin(); it != heros.end(); it++)
+                    {
+                        (*it)->selectHero(pos.x, pos.y);
+                    }
+
+                    pressed_rectangle = true;
+                    pressed_LKM_X = pos.x;
+                    pressed_LKM_Y = pos.y;
+
+                    /*pressed_selection_building = true;
 
                     // Сброс обьекта который нажат
                     isSelect = 0;
@@ -672,11 +2420,11 @@ void game(RenderWindow & window)
 
                             // Сброс обьекта "выбор" который нажат
                             indexCave = -1;
-                            indexBuilding = -1;
-                            indexHouse = -1;
-                            indexFountain = -1;
-                            indexTower = -1;
-                            indexAmbar = -1;
+                            //indexBuilding = -1;
+                            //indexHouse = -1;
+                            //indexFountain = -1;
+                            //indexTower = -1;
+                            //indexAmbar = -1;
                         }
                         else if (indexBuilding != -1)
                         {
@@ -697,12 +2445,12 @@ void game(RenderWindow & window)
                             }
 
                             // Сброс обьекта "выбор" который нажат
-                            indexCave = -1;
+                            //indexCave = -1;
                             indexBuilding = -1;
-                            indexHouse = -1;
-                            indexFountain = -1;
-                            indexTower = -1;
-                            indexAmbar = -1;
+                            //indexHouse = -1;
+                            //indexFountain = -1;
+                            //indexTower = -1;
+                            //indexAmbar = -1;
                         }
                         else if (indexHouse != -1)
                         {
@@ -732,12 +2480,12 @@ void game(RenderWindow & window)
                             }
 
                             // Сброс обьекта "выбор" который нажат
-                            indexCave = -1;
-                            indexBuilding = -1;
+                            //indexCave = -1;
+                            //indexBuilding = -1;
                             indexHouse = -1;
-                            indexFountain = -1;
-                            indexTower = -1;
-                            indexAmbar = -1;
+                            //indexFountain = -1;
+                            //indexTower = -1;
+                            //indexAmbar = -1;
                         }
                         else if (indexFountain != -1)
                         {
@@ -758,12 +2506,12 @@ void game(RenderWindow & window)
                             }
 
                             // Сброс обьекта "выбор" который нажат
-                            indexCave = -1;
-                            indexBuilding = -1;
-                            indexHouse = -1;
+                            //indexCave = -1;
+                            //indexBuilding = -1;
+                           // indexHouse = -1;
                             indexFountain = -1;
-                            indexTower = -1;
-                            indexAmbar = -1;
+                            //indexTower = -1;
+                            //indexAmbar = -1;
                         }
                         else if (indexTower != -1)
                         {
@@ -784,12 +2532,12 @@ void game(RenderWindow & window)
                             }
 
                             // Сброс обьекта "выбор" который нажат
-                            indexCave = -1;
-                            indexBuilding = -1;
-                            indexHouse = -1;
-                            indexFountain = -1;
+                            //indexCave = -1;
+                            //indexBuilding = -1;
+                            //indexHouse = -1;
+                            //indexFountain = -1;
                             indexTower = -1;
-                            indexAmbar = -1;
+                            //indexAmbar = -1;
                         }
                         else if (indexAmbar != -1)
                         {
@@ -819,11 +2567,11 @@ void game(RenderWindow & window)
                             }
 
                             // Сброс обьекта "выбор" который нажат
-                            indexCave = -1;
-                            indexBuilding = -1;
-                            indexHouse = -1;
-                            indexFountain = -1;
-                            indexTower = -1;
+                            //indexCave = -1;
+                            //indexBuilding = -1;
+                            //indexHouse = -1;
+                            //indexFountain = -1;
+                            //indexTower = -1;
                             indexAmbar = -1;
                         }
                         else
@@ -836,10 +2584,18 @@ void game(RenderWindow & window)
                             indexFountain = fountain.checkPosition(pos.x, pos.y);
                             indexAmbar = ambar.checkPosition(pos.x, pos.y);
                         }
-                    }
+                    }*/
                 }
+
                 if (event.key.code == Mouse::Right)
                 {
+                    int i = 0;
+                    for (it = heros.begin(); it != heros.end(); it++, i++)
+                    {
+                        (*it)->endPosHero(pos.x, pos.y, i);
+                    }
+
+
                     // Вставка обьекта (если можно вставить в даную область карты)
                     if (isSelect == 1)
                     {
@@ -888,13 +2644,303 @@ void game(RenderWindow & window)
                     }
                     if (isSelect == 6)
                     {
-                        if (ambar.build(84, pos.x, pos.y))
+                        if (ambar.build(84, pos.x, pos.y)) // R = 84  увеличил что б рядом размещать войска
                         {
                             isSelect = 0;
                             coins -= 450;
                             sprintf(money, "%i", coins);
                         }
                     }
+                }
+            }
+
+            if (event.type == Event::MouseButtonReleased)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    released_LKM_X = pos.x;
+                    released_LKM_Y = pos.y;
+
+                    // Перемещение камеры вида по мини-карте (можно перенести "pos.y < (posWindow.y + 717)" в начальное условие вместе с кругом)
+                    //if(pow(pressed_LKM_X - released_LKM_X, 2) + pow(pressed_LKM_Y - released_LKM_Y, 2) < 100) // или эта проверка
+                    if(pressed_LKM_X == released_LKM_X && pressed_LKM_Y == released_LKM_Y) // или эта проверка
+                    {
+                        if(pow(pos.x - (posWindow.x + 130), 2) + pow(pos.y - (posWindow.y + 634), 2) <= 12100)
+                        {
+                            if(pos.x < (posWindow.x + 95) && pos.y < (posWindow.y + 600)) // tp LU
+                            {
+                                view.reset(FloatRect(-1500, -850, 1366, 768));
+                            }
+                            else if(pos.x > (posWindow.x + 165) && pos.y < (posWindow.y + 600)) // tp RU
+                            {
+                                view.reset(FloatRect(1500, -850, 1366, 768));
+                            }
+                            else if(pos.x > (posWindow.x + 165) && pos.y > (posWindow.y + 660) && pos.y < (posWindow.y + 717)) // tp RD
+                            {
+                                view.reset(FloatRect(1500, 850, 1366, 768));
+                            }
+                            else if(pos.x < (posWindow.x + 95) && pos.y > (posWindow.y + 660) && pos.y < (posWindow.y + 717)) // tp LD
+                            {
+                                view.reset(FloatRect(-1500, 850, 1366, 768));
+                            }
+                            else if(pos.x < (posWindow.x + 95) && pos.y < (posWindow.y + 717)) // tp L
+                            {
+                                view.reset(FloatRect(-1500, 0, 1366, 768));
+                            }
+                            else if(pos.x > (posWindow.x + 165) && pos.y < (posWindow.y + 717)) // tp R
+                            {
+                                view.reset(FloatRect(1500, 0, 1366, 768));
+                            }
+                            else if(pos.y < (posWindow.y + 600)) // tp U
+                            {
+                                view.reset(FloatRect(0, -850, 1366, 768));
+                            }
+                            else if(pos.y > (posWindow.y + 660) && pos.y < (posWindow.y + 717)) // tp D
+                            {
+                                view.reset(FloatRect(0, 850, 1366, 768));
+                            }
+                            else // tp Centre
+                            {
+                                if(pos.y < (posWindow.y + 717))
+                                {
+                                    view.reset(FloatRect(0, 0, 1366, 768));
+                                }
+                            }
+                        }
+                    }
+
+
+                    for (it = heros.begin(); it != heros.end(); it++)
+                    {
+                        (*it)->selectHero(pressed_LKM_X, pressed_LKM_Y, released_LKM_X, released_LKM_Y);
+                    }
+
+                    pressed_rectangle = false;
+                    rectangle.setSize(Vector2f(0, 0));
+                    window.display();
+
+                    pressed_selection_building = true;
+
+                    // Выбор обьекта который нажат
+                    if (pressed_selection == true)
+                    {
+                        if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
+                        {
+                            if(coins >= 50)
+                            {
+                                cave.createAndMove(window, pos.x, pos.y);
+                                isSelect = 1;
+                            }
+                        }
+                        else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
+                        {
+                            if(coins >= 250)
+                            {
+                                building.createAndMove(window, pos.x, pos.y);
+                                isSelect = 2;
+                            }
+                        }
+                        else if ( (((pos.x - 819)*(pos.x - 819)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
+                        {
+                            if(coins >= 250)
+                            {
+                                house.createAndMove(window, pos.x, pos.y);
+                                isSelect = 3;
+                            }
+                        }
+                        else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
+                        {
+                            if(coins >= 1000)
+                            {
+                                fountain.createAndMove(window, pos.x, pos.y);
+                                isSelect = 4;
+                            }
+                        }
+                        else if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
+                        {
+                            if(coins >= 1000)
+                            {
+                                tower.createAndMove(window, pos.x, pos.y);
+                                isSelect = 5;
+                            }
+                        }
+                        else if ( (((pos.x - 531)*(pos.x - 531)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
+                        {
+                            if(coins >= 450)
+                            {
+                                ambar.createAndMove(window, pos.x, pos.y);
+                                isSelect = 6;
+                            }
+                        }
+
+                        pressed_selection = false;
+                        pressed_selection_building = false;
+                    }
+                    else if ( (((pos.x - 683)*(pos.x - 683)) + ((pos.y - 410)*(pos.y - 410))) <= 11025 )
+                    {
+                        pressed_selection = true;
+                    }
+
+                    if(pressed_selection_building  == true)
+                    {
+                        if (indexCave != -1)
+                        {
+                            if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) - 50))*(pos.y - (cave.getY(indexCave) - 50)))) <= 950 )
+                            {
+                                if (coins >= 1000)
+                                {
+                                    coins -= 1000;
+                                    cave.setCoins(indexCave, 10);
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) + 50))*(pos.y - (cave.getY(indexCave) + 50)))) <= 950 )
+                            {
+                                coins += 25;
+                                sprintf(money, "%i", coins);
+                                cave.deleteBuildingIndex(indexCave);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexCave = -1;
+                        }
+                        else if (indexBuilding != -1)
+                        {
+                            if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) - 50))*(pos.y - (building.getY(indexBuilding) - 50)))) <= 950 )
+                            {
+                                if (coins >= 2000)
+                                {
+                                    coins -= 2000;
+                                    building.setCoins(indexBuilding, 15);
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) + 50))*(pos.y - (building.getY(indexBuilding) + 50)))) <= 950 )
+                            {
+                                coins += 125;
+                                sprintf(money, "%i", coins);
+                                building.deleteBuildingIndex(indexBuilding);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexBuilding = -1;
+                        }
+                        else if (indexHouse != -1)
+                        {
+                            if ( (((pos.x - (house.getX(indexHouse) - 48))*(pos.x  - (house.getX(indexHouse) - 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 1500)
+                                {
+                                    coins -= 1500;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - (house.getX(indexHouse) + 48))*(pos.x  - (house.getX(indexHouse) + 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 1500)
+                                {
+                                    coins -= 1500;
+                                    house.setCoins(indexHouse, 10);
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - house.getX(indexHouse))*(pos.x  - house.getX(indexHouse))) + ((pos.y - (house.getY(indexHouse) + 50))*(pos.y - (house.getY(indexHouse) + 50)))) <= 950 )
+                            {
+                                coins += 125;
+                                sprintf(money, "%i", coins);
+                                house.deleteBuildingIndex(indexHouse);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexHouse = -1;
+                        }
+                        else if (indexFountain != -1)
+                        {
+                            if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) - 50))*(pos.y - (fountain.getY(indexFountain) - 50)))) <= 950 )
+                            {
+                                if (coins >= 2000)
+                                {
+                                    coins -= 2000;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) + 50))*(pos.y - (fountain.getY(indexFountain) + 50)))) <= 950 )
+                            {
+                                coins += 500;
+                                sprintf(money, "%i", coins);
+                                fountain.deleteBuildingIndex(indexFountain);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexFountain = -1;
+                        }
+                        else if (indexTower != -1)
+                        {
+                            if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) - 50))*(pos.y - (tower.getY(indexTower) - 50)))) <= 950 )
+                            {
+                                if (coins >= 2000) //if (coins >= 2000 && tower.getRadiusTower(indexTower) < 250)
+                                {
+                                    coins -= 2000;
+                                    // to do //tower.setRadiusTower(indexTower, 10);
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) + 50))*(pos.y - (tower.getY(indexTower) + 50)))) <= 950 )
+                            {
+                                coins += 500;
+                                sprintf(money, "%i", coins);
+                                tower.deleteBuildingIndex(indexTower);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexTower = -1;
+                        }
+                        else if (indexAmbar != -1)
+                        {
+                            if ( (((pos.x - (ambar.getX(indexAmbar) - 48))*(pos.x  - (ambar.getX(indexAmbar) - 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 2500)
+                                {
+                                    coins -= 2500;
+                                    // to do
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - (ambar.getX(indexAmbar) + 48))*(pos.x  - (ambar.getX(indexAmbar) + 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                            {//мб сместить на пиксель вверх
+                                if (coins >= 1000)
+                                {
+                                    coins -= 1000;
+                                    heros.push_back(new Player("Images/hero_40x40.png", "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar), 40, 40)); // место где будут размещаться новые войска при создании
+                                    heros.push_back(new Player("Images/hero_40x40.png", "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar) + 40, 40, 40));
+                                    // можно добавить еще пару юнитов
+                                    sprintf(money, "%i", coins);
+                                }
+                            }
+                            else if ( (((pos.x - ambar.getX(indexAmbar))*(pos.x  - ambar.getX(indexAmbar))) + ((pos.y - (ambar.getY(indexAmbar) + 50))*(pos.y - (ambar.getY(indexAmbar) + 50)))) <= 950 )
+                            {
+                                coins += 225;
+                                sprintf(money, "%i", coins);
+                                ambar.deleteBuildingIndex(indexAmbar);
+                            }
+
+                            // Сброс обьекта "выбор" который нажат
+                            indexAmbar = -1;
+                        }
+                        else
+                        {
+                            // Выбор обьекта "выбор" который нажат
+                            indexCave = cave.checkPosition(pos.x, pos.y);
+                            indexBuilding = building.checkPosition(pos.x, pos.y);
+                            indexHouse = house.checkPosition(pos.x, pos.y);
+                            indexTower = tower.checkPosition(pos.x, pos.y);
+                            indexFountain = fountain.checkPosition(pos.x, pos.y);
+                            indexAmbar = ambar.checkPosition(pos.x, pos.y);
+                        }
+                    }
+
                 }
             }
         }
@@ -920,9 +2966,26 @@ void game(RenderWindow & window)
         }
 
         window.clear();
-        //window.setView(view);
+        window.setView(view);
         window.draw(background.sprite);
-        //window.draw(oz.sprite);
+
+        // Разметка границ карты
+        Vertex lineBorder[] =
+        {
+            Vertex(Vector2f(-1475, -750), Color::Red),
+            Vertex(Vector2f(-1475, 1593), Color::Red),
+
+            Vertex(Vector2f(2841, -750), Color::Red),
+            Vertex(Vector2f(2841, 1593), Color::Red),
+
+            Vertex(Vector2f(-1475, -750), Color::Red),
+            Vertex(Vector2f(2841, -750), Color::Red),
+
+            Vertex(Vector2f(-1475, 1593), Color::Red),
+            Vertex(Vector2f(2841, 1593), Color::Red)
+        };
+        window.draw(lineBorder, 8, Lines);
+
         window.draw(castle.sprite);
 
         // Прорисовка обьектов
@@ -931,11 +2994,45 @@ void game(RenderWindow & window)
         house.moveAndDraw(window, 69, pos.x, pos.y);
         fountain.moveAndDraw(window, 42, pos.x, pos.y);
         tower.moveAndDraw(window, 53, pos.x, pos.y);
-        ambar.moveAndDraw(window, 84, pos.x, pos.y);
+        ambar.moveAndDraw(window, 220, pos.x, pos.y); // R = 84  увеличил что б рядом размещать войска
+
+        // Вражеские строения
+        EnemyCastle.draw(window);
+        boiler.draw(window);
+        EnemyTower.draw(window);
+
+        for (it = heros.begin(); it != heros.end(); it++)
+        {
+			(*it)->updateHero(time);
+		}
+
+        if (pressed_rectangle == true)
+        {
+            rectangle.setPosition(pressed_LKM_X, pressed_LKM_Y);
+            rectangle.setSize(Vector2f(pos.x - pressed_LKM_X, pos.y - pressed_LKM_Y));
+        }
+
+        for (it = heros.begin(); it != heros.end(); it++)
+        {
+			(*it)->drawHero(window);
+		}
+
+        ////// Enemy
+        for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++)
+        {
+			(*itEnemy)->updateEnemy(time);
+		}
+        for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++)
+        {
+			(*itEnemy)->drawEnemy(window);
+		}
+        ////// Enemy
+
+        window.draw(rectangle);
 
         // Прорисовка обьекта "выбор" при нажатии на обьект
-        if(pressed_selection_building  == true)
-        {
+        if((pressed_selection_building  == true) && (pow(pressed_LKM_X - released_LKM_X, 2) + pow(pressed_LKM_Y - released_LKM_Y, 2) < 100))
+        {   // делано для того что бы при выдилением квадратом не выбирался обьект // возможно эту проверку: pressed_LKM_X == released_LKM_X && pressed_LKM_Y == released_LKM_Y
             if (indexCave != -1)
             {
                 selection2.sprite.setPosition(cave.getX(indexCave), cave.getY(indexCave));
@@ -998,7 +3095,7 @@ void game(RenderWindow & window)
                 selection2.sprite.setPosition(tower.getX(indexTower), tower.getY(indexTower));
                 window.draw(selection2.sprite);
 
-                if (coins < 2000)
+                if (coins < 2000) //if (coins < 2000 || tower.getRadiusTower(indexTower) == 250)
                 {
                     selectionNot.x = tower.getX(indexTower);
                     selectionNot.y = tower.getY(indexTower) - 50;
@@ -1030,8 +3127,8 @@ void game(RenderWindow & window)
         }
 
         // Прорисовка обьекта "выбор" при нажатии на обьект "Замок"
-        if (pressed_selection == true)
-        {
+        if((pressed_selection == true) && (pow(pressed_LKM_X - released_LKM_X, 2) + pow(pressed_LKM_Y - released_LKM_Y, 2) < 100)) // pressed_LKM_X == released_LKM_X && pressed_LKM_Y == released_LKM_Y
+        {   // делано для того что бы при выдилением квадратом не выбирался Замок // возможно эту проверку: pressed_LKM_X == released_LKM_X && pressed_LKM_Y == released_LKM_Y
             window.draw(selection.sprite);
 
             if(cave.getIndex() == 4)
@@ -1101,8 +3198,10 @@ void game(RenderWindow & window)
             }
         }
 
-        Vector2i pixelPosWindow = window.getPosition();
-        Vector2f posWindow = window.mapPixelToCoords(pixelPosWindow);
+
+        // Координаты относительно экрана
+        pixelPosWindow = window.getPosition();
+        posWindow = window.mapPixelToCoords(pixelPosWindow);
 
         miniMap.sprite.setPosition(posWindow.x, posWindow.y + 510);
         window.draw(miniMap.sprite);
@@ -1112,8 +3211,30 @@ void game(RenderWindow & window)
         text.setPosition(posWindow.x + 53, posWindow.y + 721);
         window.draw(text);
 
+        // Разметки на мини-карте
+        Vertex lineMiniMap[] =
+        {
+            Vertex(Vector2f(posWindow.x + 95, posWindow.y + 531)),
+            Vertex(Vector2f(posWindow.x + 95, posWindow.y + 716)),
+
+            Vertex(Vector2f(posWindow.x + 165, posWindow.y + 530)),
+            Vertex(Vector2f(posWindow.x + 165, posWindow.y + 716)),
+
+            Vertex(Vector2f(posWindow.x + 26, posWindow.y + 600)),
+            Vertex(Vector2f(posWindow.x + 235, posWindow.y + 600)),
+
+            Vertex(Vector2f(posWindow.x + 22, posWindow.y + 660)),
+            Vertex(Vector2f(posWindow.x + 238, posWindow.y + 660))
+        };
+        window.draw(lineMiniMap, 8, Lines);
+
         window.display();
     }
+
+    char * sqlQueryMap = "DELETE FROM Map WHERE Name <> ?;";
+    db.clearData(sqlQueryMap); // очищаем все обьекты с базы данных, кроме главного Замка
+    char * sqlQueryPlayer = "DELETE FROM Player;";
+    db.clearData(sqlQueryPlayer); // очищаем всех персонажей с базы данных
 }
 
 int main()
@@ -1127,2073 +3248,3 @@ int main()
     window.close();
     return 0;
 }
-
-/*int main(int argc, char *argv[])
-{
-    ifstream fs("map1.txt", ios::in | ios::binary);
-
-    while (fs.getline(buffer[countStr], 50))
-    {
-        countStr++;
-    }
-    fs.close();
-
-
-    fstream file;
-    file.open("map1.txt", ios::out);
-    file << "";
-    file.close();
-
-    ofstream fout("map1.txt", std::ios_base::app);
-    for(int k = 0; k < countStr; k++)
-    {
-        //if(k != delIndex)
-            fout << buffer[k] << "\n";
-    }
-    fout.close();
-
-    return 0;
-}*/
-
-
-
-
-
-
-
-
-///////КЛАСС ИГРОКА///////
-/*class Player
-{
-public:
-    Image image;
-    Texture texture;
-    Sprite sprite;
-
-    int x, y, w, h;
-
-    int begX, begY;
-    int endX, endY;
-    int dx, dy;
-    float angle;
-
-    bool isMove, isSelect;
-    float CurrentFrame;
-
-    //float speed;
-    //int dir;
-
-    Player(String file, int positionX, int positionY, int width, int height)
-    {
-        x = positionX;
-        y = positionY;
-        w = width;
-        h = height;
-        image.loadFromFile(file);
-        image.createMaskFromColor(Color::White);
-        texture.loadFromImage(image);
-        sprite.setTexture(texture);
-        sprite.setPosition(positionX, positionY);
-        sprite.setTextureRect(IntRect(0, 200, w, h));
-        sprite.setOrigin(w/2, h/2);
-
-        CurrentFrame = 0;
-        isMove = false;
-        isSelect = false;
-
-        angle = 45;
-    }
-
-
-    void update(float time,  int numImage, int posX, int posY)
-    {
-        CurrentFrame += 0.02*time;
-        if (CurrentFrame > 10) CurrentFrame -= 10;
-        sprite.setTextureRect(IntRect(w * int(CurrentFrame), numImage, w, h));
-        sprite.setPosition(posX, posY);
-    }
-
-    void stop()
-    {
-        if (-90 < angle && angle <= 0)
-            sprite.setTextureRect(IntRect(0, 280, w, h));
-        else if (-180 < angle && angle <= -90)
-            sprite.setTextureRect(IntRect(0, 120, w, h));
-        else if (0 < angle && angle <= 90)
-            sprite.setTextureRect(IntRect(0, 200, w, h));
-        else if (90 < angle && angle <= 180)
-            sprite.setTextureRect(IntRect(0, 40, w, h));
-    }
-
-    void movement(float time)
-    {
-        if (isSelect)
-        {
-            if (x != endX || y != endY)
-            {
-                if (-45 < angle && angle <= 0)
-                {
-                    if (x <= begX + abs(dy)/2)
-                        update(time, 280, x++, y--);
-                    else if (x <= endX - abs(dy)/2)
-                        update(time, 240, x++, y);
-                    else if (x <= endX)
-                        update(time, 280, x++, y--);
-                }
-                else if (-90 < angle && angle <= -45)
-                {
-                    if (y >= begY - abs(dx)/2)
-                        update(time, 280, x++, y--);
-                    else if (y >= endY + abs(dx)/2)
-                        update(time, 160, x, y--);
-                    else if (y >= endY)
-                        update(time, 280, x++, y--);
-                }
-                else if (-135 < angle && angle <= -90)
-                {
-                    if (y >= begY - abs(dx)/2)
-                        update(time, 120, x--, y--);
-                    else if (y >= endY + abs(dx)/2)
-                        update(time, 160, x, y--);
-                    else if (y >= endY)
-                        update(time, 120, x--, y--);
-                }
-                else if (-180 < angle && angle <= -135)
-                {
-                    if (x >= begX - abs(dy)/2)
-                        update(time, 120, x--, y--);
-                    else if (x >= endX + abs(dy)/2)
-                        update(time, 80, x--, y);
-                    else if (x >= endX)
-                        update(time, 120, x--, y--);
-                }
-                else if (0 < angle && angle <= 45)
-                {
-                    if (x <= begX + abs(dy)/2)
-                        update(time, 200, x++, y++);
-                    else if (x <= endX - abs(dy)/2)
-                        update(time, 240, x++, y);
-                    else if (x <= endX)
-                        update(time, 200, x++, y++);
-                }
-                else if (45 < angle && angle <= 90)
-                {
-                    if (y <= begY + abs(dx)/2)
-                        update(time, 200, x++, y++);
-                    else if (y <= endY - abs(dx)/2)
-                        update(time, 0, x, y++);
-                    else if (y <= endY)
-                        update(time, 200, x++, y++);
-                }
-                else if (90 < angle && angle <= 135)
-                {
-                    if (y <= begY + abs(dx)/2)
-                        update(time, 40, x--, y++);
-                    else if (y <= endY - abs(dx)/2)
-                        update(time, 0, x, y++);
-                    else if (y <= endY)
-                        update(time, 40, x--, y++);
-                }
-                else if (135 < angle && angle <= 180)
-                {
-                    if (x >= begX - abs(dy)/2)
-                        update(time, 40, x--, y++);
-                    else if (x >= endX + abs(dy)/2)
-                        update(time, 80, x--, y);
-                    else if (x >= endX)
-                        update(time, 40, x--, y++);
-                }
-            }
-            else
-            {
-                stop();
-                isSelect = false;
-            }
-        }
-        else
-        {
-            stop();
-        }
-    }
-
-
-
-    void mouseLeft() //stop motion
-    {
-        sprite.setColor(Color::White);
-        isSelect = false;
-        isMove = false;
-    }
-
-    void mouseRight(int posX, int posY)
-    {
-        if (isMove == true)
-        {
-            begX = x;
-            begY = y;
-
-            //endX = posX;
-            //endY = posY;
-
-            dx = endX - begX;
-            dy = endY - begY;
-
-            angle = (180 / M_PI) * atan2(float(dy), float(dx));
-
-            sprite.setColor(Color::White);
-            isMove = false;
-            isSelect = true;
-        }
-    }
-
-    void MRL()
-    {
-        isMove = true;
-        sprite.setColor(Color::Red);
-    }
-
-    bool checkSelect (Player * hero, int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
-    {
-        if ( (((posX - x)*(posX - x)) + ((posY - y)*(posY - y))) <= 10000 )
-        {
-            for (int i = 0; i < 7; i++)
-                hero[i].MRL();
-
-            return true;
-        }
-        else if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
-                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
-                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
-                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
-                )
-        {
-            for (int i = 0; i < 7; i++)
-                hero[i].MRL();
-
-            return true;
-        }
-
-        return false;
-    }
-
-    void positionEnd(Player * hero, int posX, int posY)
-    {
-        hero[0].endX = posX - 30;
-        hero[0].endY = posY - 50;
-
-        hero[1].endX = posX + 20;
-        hero[1].endY = posY - 50;
-
-        hero[2].endX = posX - 50;
-        hero[2].endY = posY;
-
-        hero[3].endX = posX;
-        hero[3].endY = posY;
-
-        hero[4].endX = posX + 50;
-        hero[4].endY = posY;
-
-        hero[5].endX = posX - 30;
-        hero[5].endY = posY + 50;
-
-        hero[6].endX = posX + 20;
-        hero[6].endY = posY + 50;
-    }
-
-    void mouseReleasedLeft(int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
-    {
-        if (sprite.getGlobalBounds().contains(posX, posY))
-        {
-            isMove = true;
-            sprite.setColor(Color::Red);
-        }
-        else if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
-                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
-                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
-                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
-                )
-        {
-            isMove = true;
-            sprite.setColor(Color::Red);
-        }
-    }
-};
-
-// обновить класс игрока:
-// поправить спрайт
-// исправить разность между скоростями по диагонали и по катетам (не критично!)
-
-// скрол карты по диагонали (не критично!)
-// увеличить карту
-// при движении героя сделать остановку на правую кнопку мыши
-
-// при остановки не убираеться круг
-// уменьшить радиус круга
-
-int main()
-{
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
-    window.setFramerateLimit(50);
-    //menu(window);
-
-    View view(FloatRect(0, 0, 1366, 768));
-    //view.zoom(3.4f);
-
-    Images map("map.png");
-
-    int countH = 7;
-    int centerH = countH / 2;
-
-    Player * hero = new Player[7]{  {"hero_40x40.png", 270, 250, 40, 40}, {"hero_40x40.png", 320, 250, 40, 40},
-
-                    {"hero_40x40.png", 250, 300, 40, 40}, {"hero_40x40.png", 300, 300, 40, 40}, {"hero_40x40.png", 350, 300, 40, 40},
-
-                                    {"hero_40x40.png", 270, 350, 40, 40}, {"hero_40x40.png", 320, 350, 40, 40}
-                                };
-
-    ////rectangle////
-    RectangleShape rectangle(Vector2f(0, 0));
-    rectangle.setSize(Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(Color(250, 150, 100));
-
-    Clock clock;
-
-    bool pressed_rectangle = false;
-
-    int pressed_LKM_X;
-    int pressed_LKM_Y;
-
-    int released_LKM_X;
-    int released_LKM_Y;
-
-    ////shape////
-    CircleShape shape(99);
-    shape.setFillColor(Color::Transparent);
-
-    shape.setOrigin(99/2, 99/2);
-    shape.setOutlineThickness(2);
-    shape.setOutlineColor(Color(250, 150, 100));
-
-    bool pressed_shape = false;
-
-
-    while (window.isOpen() && !Keyboard::isKeyPressed(Keyboard::Escape))
-    {
-        float time = clock.getElapsedTime().asMicroseconds();
-        clock.restart();
-        time = time/800;
-
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-            {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    for (int i = 0; i < countH; i++) // stop motion
-                        hero[i].mouseLeft();
-
-                    pressed_shape = false;
-
-                    pressed_rectangle = true;
-                    pressed_LKM_X = pos.x;
-                    pressed_LKM_Y = pos.y;
-                }
-
-                if (event.key.code == Mouse::Right)
-                {
-                    hero[0].positionEnd(hero, pos.x, pos.y);
-
-                    for (int i = 0; i < countH; i++)
-                        hero[i].mouseRight(pos.x, pos.y);
-                }
-            }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    released_LKM_X = pos.x;
-                    released_LKM_Y = pos.y;
-
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
-
-                    if(hero[centerH].checkSelect(hero, pos.x, pos.y, pressed_LKM_X, pressed_LKM_Y, released_LKM_X, released_LKM_Y) == true)
-                       pressed_shape = true;
-                }
-            }
-        }
-
-        for (int i = 0; i < countH; i++)
-            hero[i].movement(time);
-
-
-        if (pressed_rectangle == true)
-        {
-            rectangle.setPosition(pressed_LKM_X, pressed_LKM_Y);
-            rectangle.setSize(Vector2f(pos.x - pressed_LKM_X, pos.y - pressed_LKM_Y));
-        }
-
-        if (pos.x > -1500 && pos.x < 2866 && pos.y > -850 && pos.y < 1618)
-        {
-            if (pixelPos.x >= 1365) {
-                view.move(0.3*time, 0);
-            }
-            if (pixelPos.y >= 767) {
-                view.move(0, 0.3*time);
-            }
-            if (pixelPos.x <= 0) {
-                view.move(-0.3*time, 0);
-            }
-            if (pixelPos.y <= 0) {
-                view.move(0, -0.3*time);
-            }
-        }
-
-        window.clear();
-
-        for (int i = 0; i < HEIGHT_MAP; i++)
-        {
-            for (int j = 0; j < WIDTH_MAP; j++)
-            {
-                if (TileMap[i][j] == ' ') map.sprite.setTextureRect(IntRect(0, 0, 32, 32));
-                if (TileMap[i][j] == 's') map.sprite.setTextureRect(IntRect(32, 0, 32, 32));
-                if (TileMap[i][j] == '0') map.sprite.setTextureRect(IntRect(64, 0, 32, 32));
-
-                map.sprite.setPosition(j * 32, i * 32);
-                window.draw(map.sprite);
-            }
-        }
-
-        //window.setView(view);
-        //window.draw(lineG, 38, Lines);
-        //window.draw(lineV, 70, Lines);
-        for (int i = 0; i < countH; i++)
-            window.draw(hero[i].sprite);
-
-        if (pressed_shape == true)
-        {
-            shape.setPosition(hero[centerH].x - 50, hero[centerH].y - 50);
-            window.draw(shape);
-        }
-
-        window.draw(rectangle);
-        window.display();
-    }
-
-    delete [] hero;
-    window.close();
-    return 0;
-}*/
-
-
-/*///////КЛАСС ИГРОКА///////
-class Player
-{
-public:
-    Image image;
-    Texture texture;
-    Sprite sprite;
-
-    int x, y, w, h;
-
-    int begX, begY;
-    int endX, endY;
-    int dx, dy;
-    float angle;
-
-    bool isMove, isSelect;
-    float CurrentFrame;
-
-    //float speed;
-    //int dir;
-
-    Player(String file, int positionX, int positionY, int width, int height)
-    {
-        x = positionX;
-        y = positionY;
-        w = width;
-        h = height;
-        image.loadFromFile(file);
-        image.createMaskFromColor(Color::White);
-        texture.loadFromImage(image);
-        sprite.setTexture(texture);
-        sprite.setPosition(positionX, positionY);
-        sprite.setTextureRect(IntRect(0, 0, w, h));
-        sprite.setOrigin(w/2, h/2);
-
-        CurrentFrame = 0;
-        isMove = false;
-        isSelect = false;
-
-        begX = x;
-        begY = y;
-
-    }
-
-    void update(float time,  int numImage, int posX, int posY)
-    {
-        CurrentFrame += 0.02*time;
-        if (CurrentFrame > 10) CurrentFrame -= 10;
-        sprite.setTextureRect(IntRect(w * int(CurrentFrame), numImage, w, h));
-        sprite.setPosition(posX, posY);
-    }
-
-    void stop()
-    {
-        if (-90 < angle && angle <= 0)
-            sprite.setTextureRect(IntRect(0, 280, w, h));
-        else if (-180 < angle && angle <= -90)
-            sprite.setTextureRect(IntRect(0, 120, w, h));
-        else if (0 < angle && angle <= 90)
-            sprite.setTextureRect(IntRect(0, 200, w, h));
-        else if (90 < angle && angle <= 180)
-            sprite.setTextureRect(IntRect(0, 40, w, h));
-    }
-
-    void movement(float time)
-    {
-        if (isSelect)
-        {
-            if (x != endX || y != endY)
-            {
-                if (-45 < angle && angle <= 0)
-                {
-                    if (x <= begX + abs(dy)/2)
-                        update(time, 280, x++, y--);
-                    else if (x <= endX - abs(dy)/2)
-                        update(time, 240, x++, y);
-                    else if (x <= endX)
-                        update(time, 280, x++, y--);
-                }
-                else if (-90 < angle && angle <= -45)
-                {
-                    if (y >= begY - abs(dx)/2)
-                        update(time, 280, x++, y--);
-                    else if (y >= endY + abs(dx)/2)
-                        update(time, 160, x, y--);
-                    else if (y >= endY)
-                        update(time, 280, x++, y--);
-                }
-                else if (-135 < angle && angle <= -90)
-                {
-                    if (y >= begY - abs(dx)/2)
-                        update(time, 120, x--, y--);
-                    else if (y >= endY + abs(dx)/2)
-                        update(time, 160, x, y--);
-                    else if (y >= endY)
-                        update(time, 120, x--, y--);
-                }
-                else if (-180 < angle && angle <= -135)
-                {
-                    if (x >= begX - abs(dy)/2)
-                        update(time, 120, x--, y--);
-                    else if (x >= endX + abs(dy)/2)
-                        update(time, 80, x--, y);
-                    else if (x >= endX)
-                        update(time, 120, x--, y--);
-                }
-                else if (0 < angle && angle <= 45)
-                {
-                    if (x <= begX + abs(dy)/2)
-                        update(time, 200, x++, y++);
-                    else if (x <= endX - abs(dy)/2)
-                        update(time, 240, x++, y);
-                    else if (x <= endX)
-                        update(time, 200, x++, y++);
-                }
-                else if (45 < angle && angle <= 90)
-                {
-                    if (y <= begY + abs(dx)/2)
-                        update(time, 200, x++, y++);
-                    else if (y <= endY - abs(dx)/2)
-                        update(time, 0, x, y++);
-                    else if (y <= endY)
-                        update(time, 200, x++, y++);
-                }
-                else if (90 < angle && angle <= 135)
-                {
-                    if (y <= begY + abs(dx)/2)
-                        update(time, 40, x--, y++);
-                    else if (y <= endY - abs(dx)/2)
-                        update(time, 0, x, y++);
-                    else if (y <= endY)
-                        update(time, 40, x--, y++);
-                }
-                else if (135 < angle && angle <= 180)
-                {
-                    if (x >= begX - abs(dy)/2)
-                        update(time, 40, x--, y++);
-                    else if (x >= endX + abs(dy)/2)
-                        update(time, 80, x--, y);
-                    else if (x >= endX)
-                        update(time, 40, x--, y++);
-                }
-            }
-            else
-            {
-                stop();
-                isSelect = false;
-            }
-        }
-        else
-        {
-            stop();
-        }
-    }
-
-
-    void mouseLeft()
-    {
-        sprite.setColor(Color::White);
-        isSelect = false;
-        isMove = false;
-    }
-
-    void mouseRight(int posX, int posY)
-    {
-        if (isMove == true)
-        {
-            begX = x;
-            begY = y;
-
-            endX = posX;
-            endY = posY;
-
-            dx = endX - begX;
-            dy = endY - begY;
-
-            //angle = (180 / M_PI) * atan2(float(dy), float(dx));
-
-            sprite.setColor(Color::White);
-            isMove = false;
-            isSelect = true;
-        }
-    }
-
-    void mouseReleasedLeft(int posX, int posY, int pressed_LKM_X, int pressed_LKM_Y, int released_LKM_X, int released_LKM_Y)
-    {
-        if (sprite.getGlobalBounds().contains(posX, posY))
-        {
-            isMove = true;
-            sprite.setColor(Color::Red);
-        }
-        else if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
-                 || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
-                 || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
-                 || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
-                )
-        {
-            isMove = true;
-            sprite.setColor(Color::Red);
-        }
-    }
-};
-
-
-int main()
-{
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
-    window.setFramerateLimit(50);
-    //menu(window);
-
-    View view(FloatRect(0, 0, 1366, 768));
-    //view.zoom(3.4f);
-
-    Images map("map.png");
-    Player hero("hero_40x40.png", 323, 324, 40, 40);
-
-    ////rectangle////
-    RectangleShape rectangle(Vector2f(0, 0));
-    rectangle.setSize(Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(Color(250, 150, 100));
-
-    Clock clock;
-
-    bool pressed_rectangle = false;
-
-    int pressed_LKM_X;
-    int pressed_LKM_Y;
-
-    int released_LKM_X;
-    int released_LKM_Y;
-
-    while (window.isOpen() && !Keyboard::isKeyPressed(Keyboard::Escape))
-    {
-        float time = clock.getElapsedTime().asMicroseconds();
-        clock.restart();
-        time = time/800;
-
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-            {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    hero.mouseLeft();
-
-                    pressed_rectangle = true;
-                    pressed_LKM_X = pos.x;
-                    pressed_LKM_Y = pos.y;
-                }
-
-                if (event.key.code == Mouse::Right)
-                {
-                    hero.mouseRight(pos.x, pos.y);
-                }
-            }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    released_LKM_X = pos.x;
-                    released_LKM_Y = pos.y;
-
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
-
-                    hero.mouseReleasedLeft(pos.x, pos.y, pressed_LKM_X, pressed_LKM_Y, released_LKM_X, released_LKM_Y);
-                }
-            }
-        }
-
-        hero.movement(time);
-
-        if (pressed_rectangle == true)
-        {
-            rectangle.setPosition(pressed_LKM_X, pressed_LKM_Y);
-            rectangle.setSize(Vector2f(pos.x - pressed_LKM_X, pos.y - pressed_LKM_Y));
-        }
-
-
-
-        if (pos.x > -1500 && pos.x < 2866 && pos.y > -850 && pos.y < 1618)
-        {
-            if (pixelPos.x >= 1365) {
-                view.move(0.3*time, 0);
-            }
-            if (pixelPos.y >= 767) {
-                view.move(0, 0.3*time);
-            }
-            if (pixelPos.x <= 0) {
-                view.move(-0.3*time, 0);
-            }
-            if (pixelPos.y <= 0) {
-                view.move(0, -0.3*time);
-            }
-        }
-
-        window.clear();
-
-        for (int i = 0; i < HEIGHT_MAP; i++)
-        {
-            for (int j = 0; j < WIDTH_MAP; j++)
-            {
-                if (TileMap[i][j] == ' ') map.sprite.setTextureRect(IntRect(0, 0, 32, 32));
-                if (TileMap[i][j] == 's') map.sprite.setTextureRect(IntRect(32, 0, 32, 32));
-                if (TileMap[i][j] == '0') map.sprite.setTextureRect(IntRect(64, 0, 32, 32));
-
-                map.sprite.setPosition(j * 32, i * 32);
-                window.draw(map.sprite);
-            }
-        }
-
-
-        window.setView(view);
-        //window.draw(lineG, 38, Lines);
-        //window.draw(lineV, 70, Lines);
-        window.draw(hero.sprite);
-        window.draw(rectangle);
-        window.display();
-    }
-
-    window.close();
-    return 0;
-}*/
-
-
-/*void movement(float time)
-    {
-        sprite.setTextureRect(IntRect(200, 0, w, h));
-
-        switch (dir)
-        {
-        case 0:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 120, w, h));
-
-            x += (-1)*time;
-            y += (-1)*time;
-
-            break;
-        case 1:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 160, w, h));
-
-            x += 0;
-            y += (-1)*time;
-
-            break;
-        case 2:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 240, w, h));
-
-            x += (1)*time;
-            y += (-1)*time;
-
-            break;
-        case 3:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 80, w, h));
-
-            x += (-1)*time;
-            y += 0;
-
-            break;
-        case 4:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 0, w, h));
-
-            x += 0;
-            y += (1)*time;
-
-            break;
-        case 5:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 200, w, h));
-
-            x += (1)*time;
-            y += 0;
-
-            break;
-        case 6:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 40, w, h));
-
-            x += (-1)*time;
-            y += (1)*time;
-
-            break;
-        case 7:
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 160, w, h));
-
-            x += (1)*time;
-            y += (1)*time;
-
-            break;
-
-         sprite.setPosition(x,y);
-        }
-
-        if (Keyboard::isKeyPressed(Keyboard::Q))
-        {
-            dir = 0;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 120, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::W))
-        {
-            dir = 1;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 160, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::E))
-        {
-            dir = 2;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 280, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::A))
-        {
-            dir = 3;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 80, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::S))
-        {
-            dir = 4;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 0, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::D))
-        {
-            dir = 5;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 240, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::Z))
-        {
-            dir = 6;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 40, w, h));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::X))
-        {
-            dir = 7;
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 10) CurrentFrame -= 10;
-            sprite.setTextureRect(IntRect(w * int(CurrentFrame), 200, w, h));
-        }
-
-    }
-
-
-    void update(float time)
-    {
-        switch (dir)
-        {
-        case 0:
-            dx = -speed;
-            dy = -speed;
-            break;
-        case 1:
-            dx = 0;
-            dy = -speed;
-            break;
-        case 2:
-            dx = speed;
-            dy = -speed;
-            break;
-        case 3:
-            dx = -speed;
-            dy = 0;
-            break;
-        case 4:
-            dx = 0;
-            dy = speed;
-            break;
-        case 5:
-            dx = speed;
-            dy = 0;
-            break;
-        case 6:
-            dx = -speed;
-            dy = speed;
-            break;
-        case 7:
-            dx = speed;
-            dy = speed;
-            break;
-        }
-
-        x += dx*time;        //наше ускорение на время получаем смещение координат и как следствие движение
-        y += dy*time;        //аналогично по игреку
-
-        dir = -1;
-        speed = 0;
-        sprite.setPosition(x,y);
-    }
-
-*/
-
-/*int main()
-{
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
-    window.setFramerateLimit(50);
-    //menu(window);
-
-    View view(FloatRect(200, 200, 300, 200));
-    view.zoom(1.0f);
-
-    Player hero("hero_40x40.png", 323, 324, 40, 40);
-
-    ////rectangle////
-    RectangleShape rectangle(Vector2f(0, 0));
-    rectangle.setSize(Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(Color(250, 150, 100));
-
-    bool pressed_rectangle = false;
-
-    int dX, sx;
-    int dY, sy;
-    int err, e2;
-
-    float x = 0;   // координата х при нажатии на лкм
-    float y = 0;   // координата у при нажатии на лкм
-
-    float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
-
-    int tempX = 250;      //временная коорд Х.Снимаем ее после нажатия прав клав мыши
-    int tempY = 250;      //коорд Y
-    float distance = 0;   //это расстояние от объекта до тыка курсора
-
-    Clock clock;
-    float CurrentFrame1 = 0;
-    float CurrentFrame2 = 0;
-    float CurrentFrame3 = 0;
-
-
-    Vertex lineG[] =
-    {
-        Vertex(Vector2f(0, 24)),
-        Vertex(Vector2f(1366, 24)),
-
-        Vertex(Vector2f(0, 64)),
-        Vertex(Vector2f(1366, 64)),
-
-        Vertex(Vector2f(0, 104)),
-        Vertex(Vector2f(1366, 104)),
-
-        Vertex(Vector2f(0, 144)),
-        Vertex(Vector2f(1366, 144)),
-
-        Vertex(Vector2f(0, 184)),
-        Vertex(Vector2f(1366, 184)),
-
-        Vertex(Vector2f(0, 224)),
-        Vertex(Vector2f(1366, 224)),
-
-        Vertex(Vector2f(0, 264)),
-        Vertex(Vector2f(1366, 264)),
-
-        Vertex(Vector2f(0, 304)),
-        Vertex(Vector2f(1366, 304)),
-
-        Vertex(Vector2f(0, 344)),
-        Vertex(Vector2f(1366, 344)),
-
-        Vertex(Vector2f(0, 384)),
-        Vertex(Vector2f(1366, 384)),
-
-        Vertex(Vector2f(0, 424)),
-        Vertex(Vector2f(1366, 424)),
-
-        Vertex(Vector2f(0, 464)),
-        Vertex(Vector2f(1366, 464)),
-
-        Vertex(Vector2f(0, 504)),
-        Vertex(Vector2f(1366, 504)),
-
-        Vertex(Vector2f(0, 544)),
-        Vertex(Vector2f(1366, 544)),
-
-        Vertex(Vector2f(0, 584)),
-        Vertex(Vector2f(1366, 584)),
-
-        Vertex(Vector2f(0, 624)),
-        Vertex(Vector2f(1366, 624)),
-
-        Vertex(Vector2f(0, 664)),
-        Vertex(Vector2f(1366, 664)),
-
-        Vertex(Vector2f(0, 704)),
-        Vertex(Vector2f(1366, 704)),
-
-        Vertex(Vector2f(0, 744)),
-        Vertex(Vector2f(1366, 744))
-    };
-
-    Vertex lineV[] =
-    {
-        Vertex(Vector2f(23, 0)),
-        Vertex(Vector2f(23, 768)),
-
-        Vertex(Vector2f(63, 0)),
-        Vertex(Vector2f(63, 768)),
-
-        Vertex(Vector2f(103, 0)),
-        Vertex(Vector2f(103, 768)),
-
-        Vertex(Vector2f(143, 0)),
-        Vertex(Vector2f(143, 768)),
-
-        Vertex(Vector2f(183, 0)),
-        Vertex(Vector2f(183, 768)),
-
-        Vertex(Vector2f(223, 0)),
-        Vertex(Vector2f(223, 768)),
-
-        Vertex(Vector2f(263, 0)),
-        Vertex(Vector2f(263, 768)),
-
-        Vertex(Vector2f(303, 0)),
-        Vertex(Vector2f(303, 768)),
-
-        Vertex(Vector2f(343, 0)),
-        Vertex(Vector2f(343, 768)),
-
-        Vertex(Vector2f(383, 0)),
-        Vertex(Vector2f(383, 768)),
-
-        Vertex(Vector2f(423, 0)),
-        Vertex(Vector2f(423, 768)),
-
-        Vertex(Vector2f(463, 0)),
-        Vertex(Vector2f(463, 768)),
-
-        Vertex(Vector2f(503, 0)),
-        Vertex(Vector2f(503, 768)),
-
-        Vertex(Vector2f(543, 0)),
-        Vertex(Vector2f(543, 768)),
-
-        Vertex(Vector2f(583, 0)),
-        Vertex(Vector2f(583, 768)),
-
-        Vertex(Vector2f(623, 0)),
-        Vertex(Vector2f(623, 768)),
-
-        Vertex(Vector2f(663, 0)),
-        Vertex(Vector2f(663, 768)),
-
-        Vertex(Vector2f(703, 0)),
-        Vertex(Vector2f(703, 768)),
-
-        Vertex(Vector2f(743, 0)),
-        Vertex(Vector2f(743, 768)),
-
-        Vertex(Vector2f(783, 0)),
-        Vertex(Vector2f(783, 768)),
-
-        Vertex(Vector2f(823, 0)),
-        Vertex(Vector2f(823, 768)),
-
-        Vertex(Vector2f(863, 0)),
-        Vertex(Vector2f(863, 768)),
-
-        Vertex(Vector2f(903, 0)),
-        Vertex(Vector2f(903, 768)),
-
-        Vertex(Vector2f(943, 0)),
-        Vertex(Vector2f(943, 768)),
-
-        Vertex(Vector2f(983, 0)),
-        Vertex(Vector2f(983, 768)),
-
-        Vertex(Vector2f(1023, 0)),
-        Vertex(Vector2f(1023, 768)),
-
-        Vertex(Vector2f(1063, 0)),
-        Vertex(Vector2f(1063, 768)),
-
-        Vertex(Vector2f(1103, 0)),
-        Vertex(Vector2f(1103, 768)),
-
-        Vertex(Vector2f(1143, 0)),
-        Vertex(Vector2f(1143, 768)),
-
-        Vertex(Vector2f(1183, 0)),
-        Vertex(Vector2f(1183, 768)),
-
-        Vertex(Vector2f(1223, 0)),
-        Vertex(Vector2f(1223, 768)),
-
-        Vertex(Vector2f(1263, 0)),
-        Vertex(Vector2f(1263, 768)),
-
-        Vertex(Vector2f(1303, 0)),
-        Vertex(Vector2f(1303, 768)),
-
-        Vertex(Vector2f(1343, 0)),
-        Vertex(Vector2f(1343, 768))
-    };
-
-
-    while (window.isOpen() && !Keyboard::isKeyPressed(Keyboard::Escape))
-    {
-        float time = clock.getElapsedTime().asMicroseconds();
-        clock.restart();
-        time = time/800;
-
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-            {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                    {
-                        hero.sprite.setColor(Color::White);
-                        pressed_rectangle = true;
-                        hero.isSelect = false;
-                        hero.isMove = false;
-                        x = pos.x;
-                        y = pos.y;
-                    }
-                }
-
-                if (event.key.code == Mouse::Right)
-                {
-                    if (hero.isMove == true)
-                    {
-                        tempX = pos.x;
-                        tempY = pos.y;
-
-                        dX = abs(tempX - hero.x), sx = hero.x < tempX ? 1 : -1;
-                        dY = abs(tempY - hero.y), sy = hero.y < tempY ? 1 : -1;
-                        err = (dx > dy ? dx : -dy) / 2;
-
-                        hero.sprite.setColor(Color::White);
-                        hero.isMove = false;
-                        hero.isSelect = true;
-                    }
-                }
-            }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    dx = pos.x;
-                    dy = pos.y;
-
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
-
-                    if (hero.sprite.getGlobalBounds().contains(pos.x, pos.y))
-                    {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
-                    }
-                    else if (((x <= hero.x) && (hero.x <= dx) && (y <= hero.y) && (hero.y <= dy))
-                             || ((dx <= hero.x) && (hero.x <= x) && (dy <= hero.y) && (hero.y <= y))
-                             || ((x <= hero.x) && (y >= hero.y) && (dx >= hero.x) && (dy <= hero.y))
-                             || ((x >= hero.x) && (y <= hero.y) && (dx <= hero.x) && (dy >= hero.y))
-                            )
-                    {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
-                    }
-                }
-            }
-        }
-
-        if (hero.isSelect)
-        {
-            //float a_1 = hero.x;
-            //float b_1 = hero.y;
-
-            //int limU_1 = ((floor(hero.x / 40)) * 40) + 24;
-            //int limL_1 = ((floor(hero.x / 40)) * 40) + 23;
-
-            if (hero.x != tempX && hero.y != tempY)
-            {
-                e2 = err;
-                if (e2 > -dX) { err -= dY; hero.x += sx; }
-                if (e2 < dY) { err += dX; hero.y += sy; }
-
-                //float a_2 = hero.x;
-                //float b_2 = hero.y;
-
-                //int limU_2 = ((floor(hero.x / 40)) * 40) + 24;
-                //int limL_2 = ((floor(hero.x / 40)) * 40) + 23;
-
-                hero.sprite.setPosition(hero.x, hero.x);
-
-                /*if (limU_1 == limU_2 && a_2 > a_1)
-                hero.dir = 5;
-
-                }
-                /*else if (limU_1 == limU_2 && a_2 < a_1)
-                {
-                    hero.dir = 3;
-                }
-                else if (limL_1 == limL_2 && b_2 > b_1)
-                {
-                    hero.dir = 4;
-                }
-                else if (limL_1 == limL_2 && b_2 < b_1)
-                {
-                    hero.dir = 1;
-                }
-                else if (limL_1 < limL_2 && limU_1 > limU_2)
-                {
-                    hero.dir = 2;
-                }
-                else if (limL_1 > limL_2 && limU_1 > limU_2)
-                {
-                    hero.dir = 0;
-                }
-                else if (limL_1 > limL_2 && limU_1 < limU_2)
-                {
-                    hero.dir = 6;
-                }
-                else if (limL_1 < limL_2 && limU_1 < limU_2)
-                {
-                    hero.dir = 7;
-                }*//*
-
-            }
-        }
-
-
-
-        //hero.movement(time);
-        //hero.update(time);
-
-        if (pressed_rectangle == true)
-        {
-            rectangle.setPosition(x, y);
-            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
-        }
-
-        window.clear();
-        //window.setView(view);
-        window.draw(lineG, 38, Lines);
-        window.draw(lineV, 70, Lines);
-        window.draw(hero.sprite);
-        window.draw(rectangle);
-        window.display();
-    }
-
-    window.close();
-    return 0;
-}*/
-
-// движение по указателю
-/*int main()
-{   int check=0;
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
-    window.setFramerateLimit(50);
-    //menu(window);
-
-    View view(FloatRect(200, 200, 300, 200));
-    view.zoom(1.0f);
-
-    Player hero("hero_40x40.png", 323, 324, 40, 40);
-
-    ////rectangle////
-    RectangleShape rectangle(Vector2f(0, 0));
-    rectangle.setSize(Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(Color(250, 150, 100));
-
-    bool pressed_rectangle = false;
-
-    int dX, sx;
-    int dY, sy;
-    int err, e2;
-
-    float x = 0;   // координата х при нажатии на лкм
-    float y = 0;   // координата у при нажатии на лкм
-
-    float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
-
-    int tempX = 250;      //временная коорд Х.Снимаем ее после нажатия прав клав мыши
-    int tempY = 250;      //коорд Y
-    float distance = 0;   //это расстояние от объекта до тыка курсора
-
-    Clock clock;
-
-    int a_1 = 323;
-    int b_1 = 324;
-    int a_2 = 323;
-    int b_2 = 324;
-
-    Vertex lineG[] =
-    {
-        Vertex(Vector2f(0, 24)),
-        Vertex(Vector2f(1366, 24)),
-
-        Vertex(Vector2f(0, 64)),
-        Vertex(Vector2f(1366, 64)),
-
-        Vertex(Vector2f(0, 104)),
-        Vertex(Vector2f(1366, 104)),
-
-        Vertex(Vector2f(0, 144)),
-        Vertex(Vector2f(1366, 144)),
-
-        Vertex(Vector2f(0, 184)),
-        Vertex(Vector2f(1366, 184)),
-
-        Vertex(Vector2f(0, 224)),
-        Vertex(Vector2f(1366, 224)),
-
-        Vertex(Vector2f(0, 264)),
-        Vertex(Vector2f(1366, 264)),
-
-        Vertex(Vector2f(0, 304)),
-        Vertex(Vector2f(1366, 304)),
-
-        Vertex(Vector2f(0, 344)),
-        Vertex(Vector2f(1366, 344)),
-
-        Vertex(Vector2f(0, 384)),
-        Vertex(Vector2f(1366, 384)),
-
-        Vertex(Vector2f(0, 424)),
-        Vertex(Vector2f(1366, 424)),
-
-        Vertex(Vector2f(0, 464)),
-        Vertex(Vector2f(1366, 464)),
-
-        Vertex(Vector2f(0, 504)),
-        Vertex(Vector2f(1366, 504)),
-
-        Vertex(Vector2f(0, 544)),
-        Vertex(Vector2f(1366, 544)),
-
-        Vertex(Vector2f(0, 584)),
-        Vertex(Vector2f(1366, 584)),
-
-        Vertex(Vector2f(0, 624)),
-        Vertex(Vector2f(1366, 624)),
-
-        Vertex(Vector2f(0, 664)),
-        Vertex(Vector2f(1366, 664)),
-
-        Vertex(Vector2f(0, 704)),
-        Vertex(Vector2f(1366, 704)),
-
-        Vertex(Vector2f(0, 744)),
-        Vertex(Vector2f(1366, 744))
-    };
-
-    Vertex lineV[] =
-    {
-        Vertex(Vector2f(23, 0)),
-        Vertex(Vector2f(23, 768)),
-
-        Vertex(Vector2f(63, 0)),
-        Vertex(Vector2f(63, 768)),
-
-        Vertex(Vector2f(103, 0)),
-        Vertex(Vector2f(103, 768)),
-
-        Vertex(Vector2f(143, 0)),
-        Vertex(Vector2f(143, 768)),
-
-        Vertex(Vector2f(183, 0)),
-        Vertex(Vector2f(183, 768)),
-
-        Vertex(Vector2f(223, 0)),
-        Vertex(Vector2f(223, 768)),
-
-        Vertex(Vector2f(263, 0)),
-        Vertex(Vector2f(263, 768)),
-
-        Vertex(Vector2f(303, 0)),
-        Vertex(Vector2f(303, 768)),
-
-        Vertex(Vector2f(343, 0)),
-        Vertex(Vector2f(343, 768)),
-
-        Vertex(Vector2f(383, 0)),
-        Vertex(Vector2f(383, 768)),
-
-        Vertex(Vector2f(423, 0)),
-        Vertex(Vector2f(423, 768)),
-
-        Vertex(Vector2f(463, 0)),
-        Vertex(Vector2f(463, 768)),
-
-        Vertex(Vector2f(503, 0)),
-        Vertex(Vector2f(503, 768)),
-
-        Vertex(Vector2f(543, 0)),
-        Vertex(Vector2f(543, 768)),
-
-        Vertex(Vector2f(583, 0)),
-        Vertex(Vector2f(583, 768)),
-
-        Vertex(Vector2f(623, 0)),
-        Vertex(Vector2f(623, 768)),
-
-        Vertex(Vector2f(663, 0)),
-        Vertex(Vector2f(663, 768)),
-
-        Vertex(Vector2f(703, 0)),
-        Vertex(Vector2f(703, 768)),
-
-        Vertex(Vector2f(743, 0)),
-        Vertex(Vector2f(743, 768)),
-
-        Vertex(Vector2f(783, 0)),
-        Vertex(Vector2f(783, 768)),
-
-        Vertex(Vector2f(823, 0)),
-        Vertex(Vector2f(823, 768)),
-
-        Vertex(Vector2f(863, 0)),
-        Vertex(Vector2f(863, 768)),
-
-        Vertex(Vector2f(903, 0)),
-        Vertex(Vector2f(903, 768)),
-
-        Vertex(Vector2f(943, 0)),
-        Vertex(Vector2f(943, 768)),
-
-        Vertex(Vector2f(983, 0)),
-        Vertex(Vector2f(983, 768)),
-
-        Vertex(Vector2f(1023, 0)),
-        Vertex(Vector2f(1023, 768)),
-
-        Vertex(Vector2f(1063, 0)),
-        Vertex(Vector2f(1063, 768)),
-
-        Vertex(Vector2f(1103, 0)),
-        Vertex(Vector2f(1103, 768)),
-
-        Vertex(Vector2f(1143, 0)),
-        Vertex(Vector2f(1143, 768)),
-
-        Vertex(Vector2f(1183, 0)),
-        Vertex(Vector2f(1183, 768)),
-
-        Vertex(Vector2f(1223, 0)),
-        Vertex(Vector2f(1223, 768)),
-
-        Vertex(Vector2f(1263, 0)),
-        Vertex(Vector2f(1263, 768)),
-
-        Vertex(Vector2f(1303, 0)),
-        Vertex(Vector2f(1303, 768)),
-
-        Vertex(Vector2f(1343, 0)),
-        Vertex(Vector2f(1343, 768))
-    };
-
-
-    while (window.isOpen())
-    {
-        float time = clock.getElapsedTime().asMicroseconds();
-        clock.restart();
-        //time = time/800;
-        time = 40;
-
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-            {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                    {
-                        hero.sprite.setColor(Color::White);
-                        pressed_rectangle = true;
-                        hero.isSelect = false;
-                        hero.isMove = false;
-                        x = pos.x;
-                        y = pos.y;
-                    }
-                }
-
-                if (event.key.code == Mouse::Right)
-                {
-                    if (hero.isMove == true)
-                    {
-                        tempX = pos.x;
-                        tempY = pos.y;
-
-                        dX = abs(tempX - hero.x), sx = hero.x < tempX ? 1 : -1;
-                        dY = abs(tempY - hero.y), sy = hero.y < tempY ? 1 : -1;
-                        err = (dX > dY ? dX : -dY) / 2;
-
-                        hero.sprite.setColor(Color::White);
-                        hero.isMove = false;
-                        hero.isSelect = true;
-                    }
-                }
-            }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    dx = pos.x;
-                    dy = pos.y;
-
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
-
-                    if (hero.sprite.getGlobalBounds().contains(pos.x, pos.y))
-                    {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
-                    }
-                    else if (((x <= hero.x) && (hero.x <= dx) && (y <= hero.y) && (hero.y <= dy))
-                             || ((dx <= hero.x) && (hero.x <= x) && (dy <= hero.y) && (hero.y <= y))
-                             || ((x <= hero.x) && (y >= hero.y) && (dx >= hero.x) && (dy <= hero.y))
-                             || ((x >= hero.x) && (y <= hero.y) && (dx <= hero.x) && (dy >= hero.y))
-                            )
-                    {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
-                    }
-                }
-            }
-        }
-
-        if (hero.isSelect)
-        {
-            a_1 = a_2;
-            b_1 = b_2;
-
-            int limU_1 = ((floor(b_1 / 40)) * 40) + 24;
-            int limL_1 = ((floor(a_1 / 40)) * 40) + 23;
-
-            if(check==0)
-            {
-                cout<<" "<<tempX<<" "<<tempY<<" ";
-                check=1;
-            }
-
-            if ( (a_2 != tempX  && b_2 != tempY) || (a_2 != tempX  && b_2 == tempY) || (a_2 == tempX  && b_2 != tempY) )
-            {
-                e2 = err;
-                if (e2 > -dX) { err -= dY; a_2 += sx; }
-                if (e2 < dY) { err += dX; b_2 += sy; }
-                cout<<"||"<<a_2<<" "<<b_2<<"||";
-                int limU_2 = ((floor(b_2 / 40)) * 40) + 24;
-                int limL_2 = ((floor(a_2 / 40)) * 40) + 23;
-
-                if (limU_1 == limU_2 && limL_2 > limL_1)
-                {
-                   // for(int i = 0; i < 40; i+=40)
-                    {
-                        //window.clear();
-                        hero.sprite.setPosition(hero.x += time, hero.y);
-                        window.draw(hero.sprite);
-                        //window.display();
-                    }
-                }
-                else if (limU_1 == limU_2 && limL_2 < limL_1)
-                {
-                   // for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x -= time, hero.y);
-                        window.draw(hero.sprite);
-                    }
-                }
-                else if (limL_1 == limL_2 && limU_2 > limU_1)
-                {
-                   // for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x, hero.y += time);
-                        window.draw(hero.sprite);
-                    }
-                }
-                else if (limL_1 == limL_2 && limU_2 < limU_1)
-                {
-                  //  for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x, hero.y -= time);
-                        window.draw(hero.sprite);
-                    }
-                }
-                else if (limL_1 < limL_2 && limU_1 > limU_2)
-                {
-                    puts("OK");
-                   // for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x += time, hero.y -= time);
-                        window.draw(hero.sprite);
-                    }
-                }
-                else if (limL_1 > limL_2 && limU_1 > limU_2)
-                {
-                  //  for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x -= time, hero.y -= time);
-                        window.draw(hero.sprite);
-                    }
-                }
-                else if (limL_1 > limL_2 && limU_1 < limU_2)
-                {
-                  //  for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x -= time, hero.y += time);
-                        window.draw(hero.sprite);
-                    }
-                }
-                else if (limL_1 < limL_2 && limU_1 < limU_2)
-                {
-                   // for(int i = 0; i < 40; i+=40)
-                    {
-                        hero.sprite.setPosition(hero.x += time, hero.y += time);
-                        window.draw(hero.sprite);
-                    }
-                }
-
-            }
-            else
-            {
-                hero.isSelect = false;
-            }
-        }
-
-        if (pressed_rectangle == true)
-        {
-            rectangle.setPosition(x, y);
-            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
-        }
-
-        window.clear();
-        //window.setView(view);
-        window.draw(lineG, 38, Lines);
-        window.draw(lineV, 70, Lines);
-        window.draw(hero.sprite);
-        window.draw(rectangle);
-        window.display();
-    }
-
-    window.close();
-    return 0;
-}*/
-
-/*class Player
-{
-public:
-    float x, y, w, h, dx, dy, speed;    //координаты игрока х и у, высота ширина, ускорение (по х и по у), сама скорость
-    int dir;                            //направление (direction) движения игрока
-    bool isMove, isSelect;
-    float CurrentFrame;
-    Image image;
-    Texture texture;
-    Sprite sprite;
-
-    Player(String file, float positionX, float positionY, float width, float height)
-    {
-        x = positionX;
-        y = positionY;
-        w = width;
-        h = height;
-        image.loadFromFile(file);
-        image.createMaskFromColor(Color::White);
-        texture.loadFromImage(image);
-        sprite.setTexture(texture);
-        sprite.setPosition(positionX, positionY);
-        sprite.setTextureRect(IntRect(0, 0, w, h));
-        //sprite.setOrigin(x/2, y/2);
-        dir = 0;
-        speed = 0;
-        dx = 0;
-        dy = 0;
-        CurrentFrame = 0;
-        isMove = false;
-        isSelect = false;
-    }
-
-    void movement(float time)
-    {
-        sprite.setTextureRect(IntRect(32, 0, 31, 29));
-hero.sprite.setRotation(angle);
-        if (Keyboard::isKeyPressed(Keyboard::W))
-        {
-            dir = 0; //3
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(0, 32 * int(CurrentFrame), 31, 32));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::S))
-        {
-            dir = 1;  //2
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(32, 29 * int(CurrentFrame), 31, 29));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::A))
-        {
-            dir = 2; //1
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(93, 32 * int(CurrentFrame), 28, 32));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::D))
-        {
-            dir = 3; //0
-            speed = MAX_SPEED;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(64, 32 * int(CurrentFrame), 28, 32));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::Q))
-        {
-            dir = 4;
-            speed = MAX_SPEED - 0.01;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(191, 36 * int(CurrentFrame), 37, 36));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::E))
-        {
-            dir = 5;
-            speed = MAX_SPEED - 0.01;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(122, 36 * int(CurrentFrame), 36, 36));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::Z))
-        {
-            dir = 6;
-            speed = MAX_SPEED - 0.01;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(228, 32 * int(CurrentFrame), 33, 32));
-        }
-        if (Keyboard::isKeyPressed(Keyboard::X))
-        {
-            dir = 7;
-            speed = MAX_SPEED - 0.01;
-            CurrentFrame += 0.005*time;
-            if (CurrentFrame > 6) CurrentFrame -= 6;
-            sprite.setTextureRect(IntRect(159, 32 * int(CurrentFrame), 32, 32));
-        }
-    }
-
-    void update(float time) //функция "оживления" объекта класса. update - обновление. принимает в себя время SFML, вследствие чего работает бесконечно, давая персонажу движение.
-    {
-        switch (dir)        //реализуем поведение в зависимости от направления (каждая цифра соответствует направлению)
-        {
-        case 0:
-            dx = 0;
-            dy = -speed;
-            break;           //по иксу задаем нулевое значение, по игреку отрицательное. получается, что персонаж идет только вверх
-        case 1:
-            dx = 0;
-            dy = speed;
-            break;          //по иксу задаем нулевое значение, по игреку положительное. получается, что персонаж идет только вниз
-        case 2:
-            dx = -speed;
-            dy = 0;
-            break;          //по иксу задаем отрицательную скорость, по игреку зануляем. получается, что персонаж идет только влево
-        case 3:
-            dx = speed;
-            dy = 0;
-            break;          //по иксу задаем положительную скорость, по игреку зануляем. получаем, что персонаж идет только вправо
-        case 4:
-            dx = -speed;
-            dy = -speed;
-            break;
-        case 5:
-            dx = speed;
-            dy = -speed;
-            break;
-        case 6:
-            dx = -speed;
-            dy = speed;
-            break;
-        case 7:
-            dx = speed;
-            dy = speed;
-            break;
-        }
-
-        x += dx*time;        //наше ускорение на время получаем смещение координат и как следствие движение
-        y += dy*time;        //аналогично по игреку
-
-        speed = 0;                  //зануляем скорость, чтобы персонаж остановился.
-        sprite.setPosition(x,y);    //выводим спрайт в позицию x y , посередине. бесконечно выводим в этой функции, иначе бы наш спрайт стоял на месте.
-    }
-};
-
-
-int main()
-{
-    RenderWindow window(VideoMode::getDesktopMode(), "Menu");//, Style::Fullscreen);
-    window.setFramerateLimit(50);
-    //menu(window);
-
-    Player hero("hero.png", 250, 250, 31, 32);
-
-    ////rectangle////
-    RectangleShape rectangle(sf::Vector2f(0, 0));
-    rectangle.setSize(sf::Vector2f(0, 0));
-    rectangle.setFillColor(Color::Transparent);
-    rectangle.setOutlineThickness(2);
-    rectangle.setOutlineColor(sf::Color(250, 150, 100));
-
-    bool pressed_rectangle = false;
-
-    float x = 0;   // координата х при нажатии на лкм
-    float y = 0;   // координата у при нажатии на лкм
-
-    float dx = x;   // координата dx при отпускании лкм (вибран ли обьект нажатием на лкм или выдилением области)
-    float dy = y;   // координата dx при нажатии лкм (вибран ли обьект нажатием на лкм или выдилением области)
-
-    int tempX = 250;      //временная коорд Х.Снимаем ее после нажатия прав клав мыши
-    int tempY = 250;      //коорд Y
-    float distance = 0;   //это расстояние от объекта до тыка курсора
-
-    Clock clock;
-    float CurrentFrame = 0;
-
-    while (window.isOpen())
-    {
-        float time = clock.getElapsedTime().asMicroseconds();
-        clock.restart();
-        time = time/800;
-
-        Vector2i pixelPos = Mouse::getPosition(window);
-        Vector2f pos = window.mapPixelToCoords(pixelPos);
-
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-            {
-                window.close();
-            }
-            if (event.type == Event::MouseButtonPressed)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    if (pos.x >= 0 && pos.y >= 0 && pos.x <= 1366 && pos.y <= 768)
-                    {
-                        hero.sprite.setColor(Color::White);
-                        pressed_rectangle = true;
-                        hero.isSelect = false;
-                        hero.isMove = false;
-                        x = pos.x;
-                        y = pos.y;
-                    }
-                }
-
-                if (event.key.code == Mouse::Right)
-                {
-                    if (hero.isMove == true)
-                    {
-                        tempX = pos.x;
-                        tempY = pos.y;
-
-                        hero.sprite.setColor(Color::White);
-                        hero.isMove = false;
-                        hero.isSelect = true;
-                    }
-                }
-            }
-
-            if (event.type == Event::MouseButtonReleased)
-            {
-                if (event.key.code == Mouse::Left)
-                {
-                    dx = pos.x;
-                    dy = pos.y;
-
-                    pressed_rectangle = false;
-                    rectangle.setSize(Vector2f(0, 0));
-                    window.display();
-
-                    if (hero.sprite.getGlobalBounds().contains(pos.x, pos.y))
-                    {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
-                    }
-                    else if (((x <= hero.x + 15) && (hero.x + 15 <= dx) && (y <= hero.y + 16) && (hero.y + 16 <= dy))
-                             || ((dx <= hero.x + 15) && (hero.x + 15 <= x) && (dy <= hero.y + 16) && (hero.y + 16 <= y))
-                             || ((x <= hero.x + 15) && (y >= hero.y + 16) && (dx >= hero.x + 15) && (dy <= hero.y + 16))
-                             || ((x >= hero.x + 15) && (y <= hero.y + 16) && (dx <= hero.x + 15) && (dy >= hero.y + 16))
-                            )
-                    {
-                        hero.isMove = true;
-                        hero.sprite.setColor(Color::Red);
-                    }
-                }
-            }
-        }
-
-
-        if (hero.isSelect)
-        {
-            int dx = abs(tempX - hero.x), sx = hero.x < tempX ? 1 : -1;
-            int dy = abs(tempY - hero.y), sy = hero.y < tempY ? 1 : -1;
-            int err = (dx > dy ? dx : -dy) / 2, e2;
-
-            if (hero.x != tempX && hero.y != tempY)
-            {
-                e2 = err;
-                if (e2 > -dx) { err -= dy; hero.x += sx; }
-                if (e2 < dy) { err += dx; hero.y += sy; }
-                hero.sprite.setPosition(hero.x, hero.y);
-            }
-        }
-
-        if (pressed_rectangle == true)
-        {
-            rectangle.setPosition(x, y);
-            rectangle.setSize(Vector2f(pos.x-x, pos.y-y));
-        }
-
-        window.clear();
-        window.draw(hero.sprite);
-        window.draw(rectangle);
-        window.display();
-    }
-
-    window.close();
-    return 0;
-}
-*/
