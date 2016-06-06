@@ -380,6 +380,7 @@ public:             // private
         //File = file;
         image.loadFromFile(file);
         texture.loadFromImage(image);
+        //texture.setSmooth(true); // сглаживает контуры
         sprite.setTexture(texture);
         sprite.setPosition(positionX, positionY);
         x = positionX;
@@ -1411,6 +1412,7 @@ public:
 // ограеичить проходимость по краям карты !!!
 // создать миникарту с возможностью тп !!!
 // зависимость вражеских юнитов от вражеских строений
+// увеличить радиус фонтана
 
 /////////////////BUILDING////////////////////
 
@@ -1431,11 +1433,40 @@ void menu(RenderWindow & window)
 
     while (isMenu)
     {
+        Vector2i pixelPosWindow = window.getPosition();
+        Vector2f posWindow = window.mapPixelToCoords(pixelPosWindow);
+
         Event event;
         while (window.pollEvent(event))
         {
             if (event.type == Event::Closed)
+            {
                 window.close();
+            }
+
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if (menuNum == 1)
+                    {
+                        game(window);
+                    }
+                    else if (menuNum == 2)
+                    {
+                        //to do
+                    }
+                    else if (menuNum == 3)
+                    {
+                        //to do
+                        //settings(window);
+                    }
+                    else if (menuNum == 4)
+                    {
+                        isMenu = false;
+                    }
+                }
+            }
         }
 
         NewGame.sprite.setColor(Color::White);
@@ -1444,7 +1475,6 @@ void menu(RenderWindow & window)
         QuitGame.sprite.setColor(Color::White);
 
         menuNum = 0;
-        //window.clear(Color(129, 181, 221)); // Зачем ?
 
         if (IntRect(222, 252, 245, 78).contains(Mouse::getPosition(window)))
         {
@@ -1467,27 +1497,13 @@ void menu(RenderWindow & window)
             menuNum = 4;
         }
 
+        window.clear();
 
-        if (Mouse::isButtonPressed(Mouse::Left))
-        {
-            if (menuNum == 1)
-            {
-                game(window);
-            }
-            else if (menuNum == 2)
-            {
-                window.display();
-                while (!Keyboard::isKeyPressed(Keyboard::Escape));
-            }
-            else if (menuNum == 3)
-            {
-                settings(window);
-            }
-            else if (menuNum == 4)
-            {
-                isMenu = false;
-            }
-        }
+        Background.sprite.setPosition(posWindow.x, posWindow.y);
+        NewGame.sprite.setPosition(posWindow.x, posWindow.y);
+        LoadGame.sprite.setPosition(posWindow.x, posWindow.y);
+        SettingsGame.sprite.setPosition(posWindow.x, posWindow.y);
+        QuitGame.sprite.setPosition(posWindow.x, posWindow.y);
 
         window.draw(Background.sprite);
         window.draw(NewGame.sprite);
@@ -2065,6 +2081,7 @@ public:
 
 void game(RenderWindow & window)
 {
+    //saveMap(135, 683, 384); // R - можно изменить
     //fileMapCleaning();
     fileHeroCleaning("hero.txt");
     fileHeroCleaning("enemy.txt");
@@ -2103,8 +2120,6 @@ void game(RenderWindow & window)
     int indexTower = -1;
     int indexAmbar = -1;
 
-    //saveMap(135, 683, 384); // R - можно изменить
-
     Font font;
     font.loadFromFile("CyrilicOld.ttf");
     Text text("", font, 20);
@@ -2118,7 +2133,10 @@ void game(RenderWindow & window)
 
     Clock clock;
     Clock clockTimer;
+    Clock clockTimerStart;
+
     float timer = 0;
+    float timerStart = 0;
     View view(FloatRect(0, 0, 1366, 768));
 
     //// heros ////
@@ -2141,8 +2159,6 @@ void game(RenderWindow & window)
     int released_LKM_X;
     int released_LKM_Y;
 
-
-
     BuildingEnemy EnemyCastle("Building/Enemy's_castle.png", "EnemyCastle", -1300, -500, 256, 206, 5, 0);
     EnemyCastle.create(135, -1300, -500);
 
@@ -2152,8 +2168,6 @@ void game(RenderWindow & window)
 
     BuildingEnemy EnemyTower("Building/Enemy's_tower.png", "EnemyTower", -1000, -200, 82, 102, 5, 0);
     EnemyTower.create(55, -1000, -200);
-
-
 
     //// Enemy ////
     list<Enemy*> enemy;
@@ -2188,6 +2202,7 @@ void game(RenderWindow & window)
         time = time/800;
 
         timer += clockTimer.getElapsedTime().asSeconds();
+
         if(timer > 200) //2000
         {
             if(coins < 1000000000) coins += 10 + cave.getCoins() + building.getCoins() + house.getCoins() + ambar.getCoins();
@@ -2197,11 +2212,13 @@ void game(RenderWindow & window)
             for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++)
             {
                 (*itEnemy)->checkLife(0); // без входных параметров
+                if((*itEnemy)->getLife() == 0) enemy.remove(*itEnemy);
             }
 
             for (it = heros.begin(); it != heros.end(); it++)
             {
                 (*it)->checkLife(0); // без входных параметров
+                if((*it)->getLife() == 0) heros.remove(*it);
             }
 
             // Битва между героями
@@ -2221,42 +2238,68 @@ void game(RenderWindow & window)
             clockTimer.restart();
         }
 
-        if(Step < 100) Step++;
-        else Step = 0;
+        if(Step != 200)
+        {
+            if(Step < 100) Step++;
+            else Step = 0;
+        }
 
         if(Step == 1)
         {
-            if(enemy.size() < 40) enemy.push_back(new Enemy("Images/hero_40x40.png", -1320, -220, 40, 40));
-
-            int i = 0;
-            int k = 0;
-
-            for(itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
+            if(enemy.size() < 40)
             {
-                if(i < 10)
+                enemy.push_back(new Enemy("Images/hero_40x40.png", -1320, -220, 40, 40));
+
+                int i = 0;
+                int k = 0;
+
+                for(itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
                 {
-                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -600, i);
-                    if(k == 10) k = 0;
-                }
-                else if(i >= 10 && i < 20)
-                {
-                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -560, i);
-                    if(k == 10) k = 0;
-                }
-                else if(i >= 20 && i < 30)
-                {
-                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -520, i);
-                    if(k == 10) k = 0;
-                }
-                else if(i >= 30 && i < 40)
-                {
-                    (*itEnemy)->endPosEnemy(-900 + k++ * 40, -480, i);
-                    if(k == 10) k = 0;
+                    if(i < 10)
+                    {
+                        (*itEnemy)->endPosEnemy(-900 + k++ * 40, -600, i);
+                        if(k == 10) k = 0;
+                    }
+                    else if(i >= 10 && i < 20)
+                    {
+                        (*itEnemy)->endPosEnemy(-900 + k++ * 40, -560, i);
+                        if(k == 10) k = 0;
+                    }
+                    else if(i >= 20 && i < 30)
+                    {
+                        (*itEnemy)->endPosEnemy(-900 + k++ * 40, -520, i);
+                        if(k == 10) k = 0;
+                    }
+                    else if(i >= 30 && i < 40)
+                    {
+                        (*itEnemy)->endPosEnemy(-900 + k++ * 40, -480, i);
+                        if(k == 10) Step = 200;
+                    }
                 }
             }
         }
 
-/*
+        if(Step == 200)
+        {
+            if(enemy.size() == 40)
+            {
+                int i = 0;
+                timerStart += clockTimerStart.getElapsedTime().asSeconds();
+
+                if(timerStart > 1000)
+                {
+                    for(itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++, i++)
+                    {
+                        (*itEnemy)->endPosEnemy(300, 300, i);
+                        clockTimerStart.restart();
+                        timerStart = 0;
+                    }
+                }
+            }
+        }
+
+
+        /*
         if(Step == 500)
         {
             int i = 0;
@@ -2296,8 +2339,7 @@ void game(RenderWindow & window)
             {
                 window.close();
             }
-
-            if (event.type == Event::MouseButtonPressed)
+            else if (event.type == Event::MouseButtonPressed)
             {
                 if (event.key.code == Mouse::Left)
                 {
@@ -2653,8 +2695,7 @@ void game(RenderWindow & window)
                     }
                 }
             }
-
-            if (event.type == Event::MouseButtonReleased)
+            else if (event.type == Event::MouseButtonReleased)
             {
                 if (event.key.code == Mouse::Left)
                 {
@@ -3240,11 +3281,64 @@ void game(RenderWindow & window)
 int main()
 {
     RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
-    window.setVerticalSyncEnabled(true);
     window.setFramerateLimit(50);
 
-    game(window);
+    menu(window);
 
     window.close();
     return 0;
 }
+
+/*
+void renderingThread(sf::RenderWindow* window)
+{
+     ////shape////
+    CircleShape shape(50);
+    shape.setFillColor(Color::Transparent);
+
+    shape.setOrigin(50, 50);
+    shape.setOutlineThickness(2);
+    shape.setOutlineColor(Color(250, 150, 100));
+    shape.setPosition(150, 150);
+    // цикл визуализации
+    int i = 0;
+    while (window->isOpen())
+    {
+    // рисуем...
+    window->clear();
+    //Sleep(1000);
+    shape.setPosition(150, 150);
+    window->draw(shape);
+    // конец текущего кадра
+    window->display();
+    }
+}
+
+int main()
+{
+     // создаём окно (помните: безопаснее всего создавать его в главном потоке из за ограничений ОС)
+     sf::RenderWindow window(sf::VideoMode(800, 600), "OpenGL");
+
+     // деактивируем контекст OpenGL
+     window.setActive(false);
+
+     // запуск визуализации в потоке
+     sf::Thread thread(&renderingThread, &window);
+     thread.launch();
+        int i = 0;
+     // цикл обработки событий, логики и прочего..
+     while (window.isOpen())
+     {
+       Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
+                window.close();
+            }
+        }
+        cout<<i++<<endl;
+     }
+
+    return 0;
+}*/
