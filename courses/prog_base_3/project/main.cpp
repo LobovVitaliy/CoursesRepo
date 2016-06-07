@@ -363,11 +363,8 @@ bool checkPos(char * file, int posX, int posY, int index)
 class Images
 {
 public:             // private
-    int x;
-    int y;
+    int x, y, w, h;
 
-    int w;
-    int h;
     //int originX;
     //int originY;    // public
     //String File;
@@ -377,17 +374,15 @@ public:             // private
 
     Images(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0)
     {
-        //File = file;
         image.loadFromFile(file);
         texture.loadFromImage(image);
-        //texture.setSmooth(true); // сглаживает контуры
         sprite.setTexture(texture);
         sprite.setPosition(positionX, positionY);
+        sprite.setOrigin(Vector2f(width/2, height/2));
         x = positionX;
         y = positionY;
         w = width;
         h = height;
-        sprite.setOrigin(Vector2f(w/2, h/2));
     }
 };
 /////////////////HERO////////////////////////
@@ -446,6 +441,35 @@ public:
 
         char * sqlQuery = "INSERT INTO Player (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
         db->insertData(sqlQuery, Name, ID, R, x, y, 50);
+    }
+
+    Player(Sprite spr, char * name, int ID, int positionX, int positionY, int width, int height)
+    {
+        db = new Database("Data.db");
+        scaleUpdate = new Images("Images/scaleUpdate.png", 683, 200, 54, 7);
+        strcpy(this->Name, name);
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        sprite = spr;
+        sprite.setPosition(positionX, positionY);
+        sprite.setTextureRect(IntRect(0, 200, w, h));
+        sprite.setOrigin(w/2, h/2);
+        R = 20;
+        CurrentFrame = 0;
+        isMove = false;
+        isSelect = false;
+        isLive = true;
+        angle = 45;
+
+        //char * sqlQuery = "INSERT INTO Player (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
+        //db->insertData(sqlQuery, Name, ID, R, x, y, 50);
+    }
+
+    ~Player()
+    {
+        delete db;
     }
 
 
@@ -1037,6 +1061,31 @@ public:
         angle = 45;
     }
 
+    Enemy(Sprite spr, int positionX, int positionY, int width, int height)
+    {
+        db = new Database("Data.db");
+        scaleUpdate = new Images("Images/scaleUpdate.png", 683, 200, 54, 7);
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        sprite = spr;
+        sprite.setPosition(positionX, positionY);
+        sprite.setTextureRect(IntRect(0, 200, w, h));
+        sprite.setOrigin(w/2, h/2);
+        sprite.setColor(Color(80, 80, 80));
+        R = 20;
+        CurrentFrame = 0;
+        isMove = false;
+        isSelect = false;
+        isLive = true;
+        angle = 45;
+    }
+
+    ~Enemy()
+    {
+        delete db;
+    }
 
     void update(float time, int numImage, int posX, int posY)
     {
@@ -1413,6 +1462,7 @@ public:
 // создать миникарту с возможностью тп !!!
 // зависимость вражеских юнитов от вражеских строений
 // увеличить радиус фонтана
+// »зменить радиус основного круга вражеских обьектов !!!
 
 /////////////////BUILDING////////////////////
 
@@ -1576,6 +1626,24 @@ public:             // private
         sprite.setOrigin(Vector2f(w/2, h/2));
     }
 
+    ImagesBuild(Sprite spr, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
+    {
+        //File = file;
+        //image.loadFromFile(file);
+        //texture.loadFromImage(image);
+        sprite = spr;
+        sprite.setPosition(positionX, positionY);
+        sprite.setOrigin(Vector2f(width/2, height/2));
+        x = positionX;
+        y = positionY;
+        w = width;
+        h = height;
+        isMove = false;
+        isCreate = false;
+        isLive = false;
+        this->coins = coins;
+    }
+
     void setPosition(int Radius, int posX, int posY)
     {
         R = Radius;
@@ -1610,6 +1678,20 @@ public:
         }
     }
 
+    Building(Sprite spr, char * name, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
+    {
+        db = new Database("Data.db");
+        strcpy(this->Name, name);
+        this->maxCount = maxCount;
+        //this->coins = coins;
+        building = new ImagesBuild* [maxCount];
+
+        for(int i = 0; i < maxCount; i++)
+        {
+            building[i] = new ImagesBuild(spr, positionX, positionY, width, height, coins);
+        }
+    }
+
     ~Building()
     {
         for (int i = 0; i < maxCount; i++)
@@ -1617,6 +1699,7 @@ public:
             delete building[i];
         }
         delete [] building;
+        delete db;
     }
 
 
@@ -2088,12 +2171,27 @@ void game(RenderWindow & window)
 
     Images miniMap("Images/miniMap5.png", 0, 510);
 
-    Building cave("Building/cave.png", "Cave", 0, 0, 90, 60, 5, 25);
-    Building building("Building/building.png", "Building", 0, 0, 95, 88, 5, 50);
-    Building house("Building/house.png", "House", 0, 0, 140, 115, 5, 10);
-    Building fountain("Building/fountain.png", "Fountain", 0, 0, 60, 80, 5);
-    Building tower("Building/tower.png", "Tower", 0, 0, 75, 105, 5);
-    Building ambar("Building/ambar.png", "Ambar", 0, 0, 165, 134, 5, 10);
+    // «агружаю картинки только один раз, в дальнейшем использую только их спрайты
+    Images imageCave("Building/cave.png", 0, 0, 90, 60);
+    Images imageBuilding("Building/building.png", 0, 0, 95, 88);
+    Images imageHouse("Building/house.png", 0, 0, 140, 115);
+    Images imageFountain("Building/fountain.png", 0, 0, 60, 80);
+    Images imageTower("Building/tower.png", 0, 0, 75, 105);
+    Images imageAmbar("Building/ambar.png", 0, 0, 165, 134);
+
+    Building cave(imageCave.sprite, "Cave", 0, 0, 90, 60, 5, 25);
+    Building building(imageBuilding.sprite, "Building", 0, 0, 95, 88, 5, 50);
+    Building house(imageHouse.sprite, "House", 0, 0, 140, 115, 5, 10);
+    Building fountain(imageFountain.sprite, "Fountain", 0, 0, 60, 80, 5);
+    Building tower(imageTower.sprite, "Tower", 0, 0, 75, 105, 5);
+    Building ambar(imageAmbar.sprite, "Ambar", 0, 0, 165, 134, 5, 10);
+
+    //Building cave("Building/cave.png", "Cave", 0, 0, 90, 60, 5, 25);
+    //Building building("Building/building.png", "Building", 0, 0, 95, 88, 5, 50);
+    //Building house("Building/house.png", "House", 0, 0, 140, 115, 5, 10);
+    //Building fountain("Building/fountain.png", "Fountain", 0, 0, 60, 80, 5);
+    //Building tower("Building/tower.png", "Tower", 0, 0, 75, 105, 5);
+    //Building ambar("Building/ambar.png", "Ambar", 0, 0, 165, 134, 5, 10);
 
     Images background("Images/BGG1.png", -1500, -850);
     Images castle("Images/CastleNew.png", 683, 384, 250, 268);
@@ -2186,6 +2284,8 @@ void game(RenderWindow & window)
     Vector2i pixelPosWindow;
     Vector2f posWindow;
 
+    Images imagePlayer("Images/hero_40x40.png", 0, 0, 40, 40);
+
     ////shape////
     /*CircleShape shape(110);
     shape.setFillColor(Color::Transparent);
@@ -2248,7 +2348,7 @@ void game(RenderWindow & window)
         {
             if(enemy.size() < 40)
             {
-                enemy.push_back(new Enemy("Images/hero_40x40.png", -1320, -220, 40, 40));
+                enemy.push_back(new Enemy(imagePlayer.sprite, -1320, -220, 40, 40));
 
                 int i = 0;
                 int k = 0;
@@ -2628,8 +2728,7 @@ void game(RenderWindow & window)
                         }
                     }*/
                 }
-
-                if (event.key.code == Mouse::Right)
+                else if (event.key.code == Mouse::Right)
                 {
                     int i = 0;
                     for (it = heros.begin(); it != heros.end(); it++, i++)
@@ -2648,7 +2747,7 @@ void game(RenderWindow & window)
                             sprintf(money, "%i", coins);
                         }
                     }
-                    if (isSelect == 2)
+                    else if (isSelect == 2)
                     {
                         if (building.build(50, pos.x, pos.y))
                         {
@@ -2657,7 +2756,7 @@ void game(RenderWindow & window)
                             sprintf(money, "%i", coins);
                         }
                     }
-                    if (isSelect == 3)
+                    else if (isSelect == 3)
                     {
                         if (house.build(69, pos.x, pos.y))
                         {
@@ -2666,7 +2765,7 @@ void game(RenderWindow & window)
                             sprintf(money, "%i", coins);
                         }
                     }
-                    if (isSelect == 4)
+                    else if (isSelect == 4)
                     {
                         if (fountain.build(42, pos.x, pos.y))
                         {
@@ -2675,7 +2774,7 @@ void game(RenderWindow & window)
                             sprintf(money, "%i", coins);
                         }
                     }
-                    if (isSelect == 5)
+                    else if (isSelect == 5)
                     {
                         if (tower.build(53, pos.x, pos.y))
                         {
@@ -2684,7 +2783,7 @@ void game(RenderWindow & window)
                             sprintf(money, "%i", coins);
                         }
                     }
-                    if (isSelect == 6)
+                    else if (isSelect == 6)
                     {
                         if (ambar.build(84, pos.x, pos.y)) // R = 84  увеличил что б р€дом размещать войска
                         {
@@ -2954,8 +3053,8 @@ void game(RenderWindow & window)
                                 if (coins >= 1000)
                                 {
                                     coins -= 1000;
-                                    heros.push_back(new Player("Images/hero_40x40.png", "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar), 40, 40)); // место где будут размещатьс€ новые войска при создании
-                                    heros.push_back(new Player("Images/hero_40x40.png", "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar) + 40, 40, 40));
+                                    heros.push_back(new Player(imagePlayer.sprite, "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar), 40, 40)); // место где будут размещатьс€ новые войска при создании
+                                    heros.push_back(new Player(imagePlayer.sprite, "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar) + 40, 40, 40));
                                     // можно добавить еще пару юнитов
                                     sprintf(money, "%i", coins);
                                 }
