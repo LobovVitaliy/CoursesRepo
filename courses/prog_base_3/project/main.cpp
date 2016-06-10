@@ -1,11 +1,13 @@
 #include <SFML/Graphics.hpp>
-#include <Windows.h>
+//#include <Windows.h>
 #include <iostream>
 #include <fstream>
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
 #include <list>
+
+#define MAX_COUNT_HEROS 50
 
 using namespace std;
 using namespace sf;
@@ -405,11 +407,13 @@ public:
     int stopAngle = 360; // float
 
     int life = 3;
+    int armor = 0;
     bool isMove, isSelect, isLive;
     float CurrentFrame;
 
-    /// health
+    /// health and armor
     Images * scaleUpdate;
+    Images * scaleArmor;
 
     Database * db;
 
@@ -443,19 +447,20 @@ public:
         db->insertData(sqlQuery, Name, ID, R, x, y, 50);
     }
 
-    Player(Sprite spr, char * name, int ID, int positionX, int positionY, int width, int height)
+    Player(Sprite & spr, char * name, int ID, int positionX, int positionY, int width, int height)
     {
         db = new Database("Data.db");
         scaleUpdate = new Images("Images/scaleUpdate.png", 683, 200, 54, 7);
+        scaleArmor = new Images("Images/scaleUpdateGreen.png", 683, 200, 54, 7);
         strcpy(this->Name, name);
         x = positionX;
         y = positionY;
         w = width;
         h = height;
         sprite = spr;
+        sprite.setOrigin(w/2, h/2);
         sprite.setPosition(positionX, positionY);
         sprite.setTextureRect(IntRect(0, 200, w, h));
-        sprite.setOrigin(w/2, h/2);
         R = 20;
         CurrentFrame = 0;
         isMove = false;
@@ -716,7 +721,15 @@ public:
 
     void changeLife()
     {
-        life--;
+        if(armor == 0)
+        {
+            life--;
+        }
+        else
+        {
+            armor--;
+        }
+
         if(life == 0) isLive = false;
     }
 
@@ -750,6 +763,17 @@ public:
         return life;
     }
 
+    void setArmor(int armor)
+    {
+        this->armor += armor;
+        if(this->armor > 3) this->armor = 3;
+    }
+
+    int getArmor()
+    {
+        return armor;
+    }
+
 
 
     void stopHero()
@@ -774,11 +798,11 @@ public:
     {
         if(isLive == true)
         {
-            if (((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
+            if(((pressed_LKM_X <= x) && (x <= released_LKM_X) && (pressed_LKM_Y <= y) && (y <= released_LKM_Y))
                      || ((released_LKM_X <= x) && (x <= pressed_LKM_X) && (released_LKM_Y <= y) && (y <= pressed_LKM_Y))
                      || ((pressed_LKM_X <= x) && (pressed_LKM_Y >= y) && (released_LKM_X >= x) && (released_LKM_Y <= y))
                      || ((pressed_LKM_X >= x) && (pressed_LKM_Y <= y) && (released_LKM_X <= x) && (released_LKM_Y >= y))
-                    )
+            )
             {
                 isSelect = true;
                 sprite.setColor(Color::Red);
@@ -818,9 +842,17 @@ public:
     {
         if(isLive == true)
         {
+            if(armor != 0)
+            {
+                scaleArmor->sprite.setPosition(x + 17, y - 32);
+                scaleArmor->sprite.setTextureRect(IntRect(18 * (3 - armor), 0, 18, 7));
+                window.draw(scaleArmor->sprite);
+            }
+
             scaleUpdate->sprite.setPosition(x + 17, y - 25);
             scaleUpdate->sprite.setTextureRect(IntRect(18 * (3 - life), 0, 18, 7));
             window.draw(scaleUpdate->sprite);
+
             window.draw(sprite);
         }
     }
@@ -1061,7 +1093,7 @@ public:
         angle = 45;
     }
 
-    Enemy(Sprite spr, int positionX, int positionY, int width, int height)
+    Enemy(Sprite & spr, int positionX, int positionY, int width, int height)
     {
         db = new Database("Data.db");
         scaleUpdate = new Images("Images/scaleUpdate.png", 683, 200, 54, 7);
@@ -1469,6 +1501,7 @@ public:
 void menu(RenderWindow & window);
 void game(RenderWindow & window);
 void settings(RenderWindow & window);
+void rules(RenderWindow & window);
 
 void menu(RenderWindow & window)
 {
@@ -1505,6 +1538,7 @@ void menu(RenderWindow & window)
                     else if (menuNum == 2)
                     {
                         //to do
+                        //rules(window);
                     }
                     else if (menuNum == 3)
                     {
@@ -1585,6 +1619,26 @@ void settings(RenderWindow & window)
     }
 }
 
+void rules(RenderWindow & window)
+{
+    Images Settings("Images/Settings.png");
+    Images SettingsBackground("Images/SettingsBackground.png");
+
+    while (!Keyboard::isKeyPressed(Keyboard::Escape))
+    {
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+                window.close();
+        }
+
+        window.draw(SettingsBackground.sprite);
+        window.draw(Settings.sprite);
+        window.display();
+    }
+}
+
 class ImagesBuild
 {
 public:             // private
@@ -1607,6 +1661,9 @@ public:             // private
     bool isLive = false;
 
     int coins = 0;
+    int startCoins = 0;
+    int deltaArmor = 1; // только для House
+    int Radius;
 
     ImagesBuild(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
     {
@@ -1626,7 +1683,7 @@ public:             // private
         sprite.setOrigin(Vector2f(w/2, h/2));
     }
 
-    ImagesBuild(Sprite spr, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
+    ImagesBuild(Sprite & spr, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
     {
         //File = file;
         //image.loadFromFile(file);
@@ -1642,6 +1699,8 @@ public:             // private
         isCreate = false;
         isLive = false;
         this->coins = coins;
+        this->startCoins = coins;
+        deltaArmor = 1;
     }
 
     void setPosition(int Radius, int posX, int posY)
@@ -1678,7 +1737,7 @@ public:
         }
     }
 
-    Building(Sprite spr, char * name, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
+    Building(Sprite & spr, char * name, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int maxCount = 0, int coins = 0)
     {
         db = new Database("Data.db");
         strcpy(this->Name, name);
@@ -1788,7 +1847,7 @@ public:
         }
         fout.close();*/
 
-        int x, y, w, h, R, coins;
+        int x, y, w, h, R, coins, deltaArmor;
         bool isMove, isCreate, isLive;
 
         Image image;
@@ -1796,6 +1855,10 @@ public:
         Sprite sprite;
 
         char * sqlQueryUp = "UPDATE Map SET ID = ? WHERE Name = ? AND ID = ?;";
+
+        // значения которые изменяются в течение игры
+        building[indexBuilding]->deltaArmor = 1;
+        building[indexBuilding]->coins = building[indexBuilding]->startCoins;
 
         for(int i = indexBuilding; i < index; i++)
         {
@@ -1806,6 +1869,7 @@ public:
             h = building[i + 1]->h;
             R = building[i + 1]->R;
             coins = building[i + 1]->coins;
+            deltaArmor = building[i + 1]->deltaArmor;
 
             image = building[i + 1]->image;
             texture = building[i + 1]->texture;
@@ -1822,6 +1886,7 @@ public:
             building[i]->h = h;
             building[i]->R = R;
             building[i]->coins = coins;
+            building[i]->deltaArmor = deltaArmor;
 
             building[i]->image = image;
             building[i]->texture = texture;
@@ -1872,7 +1937,7 @@ public:
                 }
                 else if(strcmp(Name, "Fountain") == 0 || strcmp(Name, "Tower") == 0)
                 {
-                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 200);
+                    db->insertData(sqlQuery, Name, index, Radius, posX, posY, 100);
                 }
                 else
                 {
@@ -1896,6 +1961,17 @@ public:
             {
                 if (building[index]->isMove)
                 {
+                    // Круг вокруг строения
+                    CircleShape shape(Radius);
+                    shape.setFillColor(Color::Transparent);
+
+                    shape.setOrigin(Radius, Radius);
+                    shape.setOutlineThickness(2);
+                    shape.setOutlineColor(Color(194, 228, 228));
+                    shape.setPosition(posX, posY);
+
+                    window.draw(shape);
+
                     building[index]->sprite.setPosition(posX, posY);
 
                     char * sqlQuery = "SELECT * FROM Map;";
@@ -1963,6 +2039,11 @@ public:
         building[indexBuilding]->coins += newCoins;
     }
 
+    int getCoinsByID(int indexBuilding)
+    {
+        return building[indexBuilding]->coins;
+    }
+
     int getCoins()
     {
         int coins = 0;
@@ -1979,6 +2060,31 @@ public:
     int getIndex()
     {
         return index;
+    }
+
+    void setDeltaArmor(int i, int deltaArmor)
+    {
+        building[i]->deltaArmor = deltaArmor;
+    }
+
+    int getDeltaArmor(int i)
+    {
+        if (building[i]->isLive) return building[i]->deltaArmor;
+    }
+
+
+    void setRadius(int i, int Radius)
+    {
+        char * sqlQuery = "UPDATE Map SET Radius = ? WHERE Name = ? AND ID = ?;";
+        building[i]->Radius = Radius;
+        db->updateDataRadius(sqlQuery, Name, i, Radius);
+    }
+
+    int getRadius(int i)
+    {
+        char * sqlQuery = "SELECT * FROM Map WHERE Name = ? AND ID = ?;";
+        db->getData(sqlQuery, Name, i);
+        return db->Radius;
     }
 };
 
@@ -2043,7 +2149,15 @@ public:
             building[index]->sprite.setPosition(posX, posY);
 
             char * sqlQuery = "INSERT INTO Map (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
-            db->insertData(sqlQuery, Name, 0, Radius, posX, posY, 200);
+
+            if(strcmp(Name, "EnemyTower") == 0)
+            {
+                db->insertData(sqlQuery, Name, 0, Radius, posX, posY, 200);
+            }
+            else
+            {
+                db->insertData(sqlQuery, Name, 0, Radius, posX, posY, 0);
+            }
         }
     }
 
@@ -2162,6 +2276,32 @@ public:
     }
 };
 
+
+void build(RenderWindow & window)
+{
+    Database * db = new Database("Data.db");
+
+    char * sqlQuery = "SELECT * FROM Map;";
+    for(int j = 0; j < db->count("SELECT COUNT(*) FROM Map;"); j++)
+    {
+        db->getDataById(sqlQuery, j);
+
+        int Radius = db->R;
+        if(strcmp(db->Name, "Ambar") == 0) Radius = db->Radius;
+
+        // Круг вокруг строения
+        CircleShape shape(Radius);
+        shape.setFillColor(Color::Transparent);
+
+        shape.setOrigin(Radius, Radius);
+        shape.setOutlineThickness(2);
+        shape.setOutlineColor(Color(194, 228, 228));
+        shape.setPosition(db->x, db->y);
+        window.draw(shape);
+    }
+}
+
+
 void game(RenderWindow & window)
 {
     //saveMap(135, 683, 384); // R - можно изменить
@@ -2169,7 +2309,7 @@ void game(RenderWindow & window)
     fileHeroCleaning("hero.txt");
     fileHeroCleaning("enemy.txt");
 
-    Images miniMap("Images/miniMap5.png", 0, 510);
+    Images miniMap("Images/miniMap6.png", 0, 510); // or 5
 
     // Загружаю картинки только один раз, в дальнейшем использую только их спрайты
     Images imageCave("Building/cave.png", 0, 0, 90, 60);
@@ -2181,10 +2321,10 @@ void game(RenderWindow & window)
 
     Building cave(imageCave.sprite, "Cave", 0, 0, 90, 60, 5, 25);
     Building building(imageBuilding.sprite, "Building", 0, 0, 95, 88, 5, 50);
-    Building house(imageHouse.sprite, "House", 0, 0, 140, 115, 5, 10);
+    Building house(imageHouse.sprite, "House", 0, 0, 140, 115, 5);
     Building fountain(imageFountain.sprite, "Fountain", 0, 0, 60, 80, 5);
     Building tower(imageTower.sprite, "Tower", 0, 0, 75, 105, 5);
-    Building ambar(imageAmbar.sprite, "Ambar", 0, 0, 165, 134, 5, 10);
+    Building ambar(imageAmbar.sprite, "Ambar", 0, 0, 165, 134, 5);
 
     //Building cave("Building/cave.png", "Cave", 0, 0, 90, 60, 5, 25);
     //Building building("Building/building.png", "Building", 0, 0, 95, 88, 5, 50);
@@ -2194,6 +2334,7 @@ void game(RenderWindow & window)
     //Building ambar("Building/ambar.png", "Ambar", 0, 0, 165, 134, 5, 10);
 
     Images background("Images/BGG1.png", -1500, -850);
+
     Images castle("Images/CastleNew.png", 683, 384, 250, 268);
     Images selection("Images/selection.png", 675, 384, 365, 317);//683->675
 
@@ -2207,7 +2348,7 @@ void game(RenderWindow & window)
     Images selectionNot5("Images/selectionNot.png", 603, 504, 70, 72);
     Images selectionNot6("Images/selectionNot.png", 533, 384, 70, 72);
 
-    Images selection2("Images/selection2Update1.png", 0, 0, 64, 164);//80->64
+    Images selection2("Images/selection2Update1.png", 0, 0, 64, 164); //80->64
     Images selection3House("Images/selection3House.png", 0, 0, 160, 164);
     Images selection3Ambar("Images/selection3Ambar.png", 0, 0, 160, 164);
 
@@ -2222,11 +2363,18 @@ void game(RenderWindow & window)
     font.loadFromFile("CyrilicOld.ttf");
     Text text("", font, 20);
 
+    Text helpText("", font, 20);
+    bool isHelpText = true;
+    string help = "";
+
     bool pressed_selection_building = false;
     bool pressed_selection = false;
     int isSelect = 0;
+    bool isBuild = false;
 
-    char money[10] = "0";
+    bool isHelp = true; // включить подсказки (занести в настройки)
+
+    char money[15] = "0";
     int coins = 100000;
 
     Clock clock;
@@ -2261,8 +2409,8 @@ void game(RenderWindow & window)
     EnemyCastle.create(135, -1300, -500);
 
     BuildingEnemy boiler("Building/boiler.png", "Boiler", -1100, -600, 128, 80, 5, 0);
-    boiler.create(40, -1100, -600);
-    boiler.create(40, -1400, -250);
+    boiler.create(65, -1100, -600);
+    boiler.create(65, -1400, -250);
 
     BuildingEnemy EnemyTower("Building/Enemy's_tower.png", "EnemyTower", -1000, -200, 82, 102, 5, 0);
     EnemyTower.create(55, -1000, -200);
@@ -2286,14 +2434,9 @@ void game(RenderWindow & window)
 
     Images imagePlayer("Images/hero_40x40.png", 0, 0, 40, 40);
 
-    ////shape////
-    /*CircleShape shape(110);
-    shape.setFillColor(Color::Transparent);
+    RectangleShape rect;
+    rect.setFillColor(Color::Black);
 
-    shape.setOrigin(110, 110);
-    shape.setOutlineThickness(2);
-    shape.setOutlineColor(Color(250, 150, 100));
-    shape.setPosition(130, 634);*/
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
@@ -2305,7 +2448,7 @@ void game(RenderWindow & window)
 
         if(timer > 200) //2000
         {
-            if(coins < 1000000000) coins += 10 + cave.getCoins() + building.getCoins() + house.getCoins() + ambar.getCoins();
+            if(coins < 1000000000) coins += 10 + cave.getCoins() + building.getCoins();
             sprintf(money, "%i", coins);
             timer = 0;
 
@@ -2443,6 +2586,9 @@ void game(RenderWindow & window)
             {
                 if (event.key.code == Mouse::Left)
                 {
+                    isBuild = false; // режим постройки отключен
+                    isHelpText = true; // разрешить выводить текст при наведении на обьекты
+
                     // Останавливаю прорисовку при движении обьекта ( Сброс обьекта который нажат )
                     isSelect = 0;
 
@@ -2736,7 +2882,6 @@ void game(RenderWindow & window)
                         (*it)->endPosHero(pos.x, pos.y, i);
                     }
 
-
                     // Вставка обьекта (если можно вставить в даную область карты)
                     if (isSelect == 1)
                     {
@@ -2745,6 +2890,7 @@ void game(RenderWindow & window)
                             isSelect = 0;
                             coins -= 50;
                             sprintf(money, "%i", coins);
+                            isBuild = false; // режим постройки отключен
                         }
                     }
                     else if (isSelect == 2)
@@ -2754,6 +2900,7 @@ void game(RenderWindow & window)
                             isSelect = 0;
                             coins -= 250;
                             sprintf(money, "%i", coins);
+                            isBuild = false; // режим постройки отключен
                         }
                     }
                     else if (isSelect == 3)
@@ -2763,6 +2910,7 @@ void game(RenderWindow & window)
                             isSelect = 0;
                             coins -= 250;
                             sprintf(money, "%i", coins);
+                            isBuild = false; // режим постройки отключен
                         }
                     }
                     else if (isSelect == 4)
@@ -2772,6 +2920,7 @@ void game(RenderWindow & window)
                             isSelect = 0;
                             coins -= 1000;
                             sprintf(money, "%i", coins);
+                            isBuild = false; // режим постройки отключен
                         }
                     }
                     else if (isSelect == 5)
@@ -2781,6 +2930,7 @@ void game(RenderWindow & window)
                             isSelect = 0;
                             coins -= 1000;
                             sprintf(money, "%i", coins);
+                            isBuild = false; // режим постройки отключен
                         }
                     }
                     else if (isSelect == 6)
@@ -2790,6 +2940,7 @@ void game(RenderWindow & window)
                             isSelect = 0;
                             coins -= 450;
                             sprintf(money, "%i", coins);
+                            isBuild = false; // режим постройки отключен
                         }
                     }
                 }
@@ -2870,6 +3021,7 @@ void game(RenderWindow & window)
                             {
                                 cave.createAndMove(window, pos.x, pos.y);
                                 isSelect = 1;
+                                isBuild = true; // режим постройки включен
                             }
                         }
                         else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 )
@@ -2878,6 +3030,7 @@ void game(RenderWindow & window)
                             {
                                 building.createAndMove(window, pos.x, pos.y);
                                 isSelect = 2;
+                                isBuild = true; // режим постройки включен
                             }
                         }
                         else if ( (((pos.x - 819)*(pos.x - 819)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
@@ -2886,6 +3039,7 @@ void game(RenderWindow & window)
                             {
                                 house.createAndMove(window, pos.x, pos.y);
                                 isSelect = 3;
+                                isBuild = true; // режим постройки включен
                             }
                         }
                         else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
@@ -2894,6 +3048,7 @@ void game(RenderWindow & window)
                             {
                                 fountain.createAndMove(window, pos.x, pos.y);
                                 isSelect = 4;
+                                isBuild = true; // режим постройки включен
                             }
                         }
                         else if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 )
@@ -2902,6 +3057,7 @@ void game(RenderWindow & window)
                             {
                                 tower.createAndMove(window, pos.x, pos.y);
                                 isSelect = 5;
+                                isBuild = true; // режим постройки включен
                             }
                         }
                         else if ( (((pos.x - 531)*(pos.x - 531)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 )
@@ -2910,6 +3066,7 @@ void game(RenderWindow & window)
                             {
                                 ambar.createAndMove(window, pos.x, pos.y);
                                 isSelect = 6;
+                                isBuild = true; // режим постройки включен
                             }
                         }
 
@@ -2927,10 +3084,10 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) - 50))*(pos.y - (cave.getY(indexCave) - 50)))) <= 950 )
                             {
-                                if (coins >= 1000)
+                                if (coins >= 1000 && cave.getCoinsByID(indexCave) < 100)
                                 {
                                     coins -= 1000;
-                                    cave.setCoins(indexCave, 10);
+                                    cave.setCoins(indexCave, 15);
                                     sprintf(money, "%i", coins);
                                 }
                             }
@@ -2948,10 +3105,10 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) - 50))*(pos.y - (building.getY(indexBuilding) - 50)))) <= 950 )
                             {
-                                if (coins >= 2000)
+                                if (coins >= 2000 && building.getCoinsByID(indexBuilding) < 500)
                                 {
                                     coins -= 2000;
-                                    building.setCoins(indexBuilding, 15);
+                                    building.setCoins(indexBuilding, 25);
                                     sprintf(money, "%i", coins);
                                 }
                             }
@@ -2967,21 +3124,27 @@ void game(RenderWindow & window)
                         }
                         else if (indexHouse != -1)
                         {
+                            int deltaArmor = house.getDeltaArmor(indexHouse);
+
                             if ( (((pos.x - (house.getX(indexHouse) - 48))*(pos.x  - (house.getX(indexHouse) - 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
                             {//мб сместить на пиксель вверх
                                 if (coins >= 1500)
                                 {
                                     coins -= 1500;
-                                    // to do
                                     sprintf(money, "%i", coins);
+
+                                    for (it = heros.begin(); it != heros.end(); it++)
+                                    {
+                                        (*it)->setArmor(deltaArmor);
+                                    }
                                 }
                             }
                             else if ( (((pos.x - (house.getX(indexHouse) + 48))*(pos.x  - (house.getX(indexHouse) + 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
                             {//мб сместить на пиксель вверх
-                                if (coins >= 1500)
+                                if (coins >= 2500 && deltaArmor < 3)
                                 {
-                                    coins -= 1500;
-                                    house.setCoins(indexHouse, 10);
+                                    coins -= 2500;
+                                    house.setDeltaArmor(indexHouse, deltaArmor + 1);
                                     sprintf(money, "%i", coins);
                                 }
                             }
@@ -2999,10 +3162,10 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) - 50))*(pos.y - (fountain.getY(indexFountain) - 50)))) <= 950 )
                             {
-                                if (coins >= 2000)
+                                if (coins >= 2000 && fountain.getRadius(indexFountain) < 200)
                                 {
                                     coins -= 2000;
-                                    // to do
+                                    fountain.setRadius(indexFountain, fountain.getRadius(indexFountain) + 10);
                                     sprintf(money, "%i", coins);
                                 }
                             }
@@ -3020,10 +3183,10 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) - 50))*(pos.y - (tower.getY(indexTower) - 50)))) <= 950 )
                             {
-                                if (coins >= 2000) //if (coins >= 2000 && tower.getRadiusTower(indexTower) < 250)
+                                if (coins >= 2000 && tower.getRadius(indexTower) < 200)
                                 {
                                     coins -= 2000;
-                                    // to do //tower.setRadiusTower(indexTower, 10);
+                                    tower.setRadius(indexTower, tower.getRadius(indexTower) + 10);
                                     sprintf(money, "%i", coins);
                                 }
                             }
@@ -3041,21 +3204,25 @@ void game(RenderWindow & window)
                         {
                             if ( (((pos.x - (ambar.getX(indexAmbar) - 48))*(pos.x  - (ambar.getX(indexAmbar) - 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
                             {//мб сместить на пиксель вверх
-                                if (coins >= 2500)
+                                if (coins >= 2500 && heros.size() < MAX_COUNT_HEROS)
                                 {
                                     coins -= 2500;
-                                    // to do
+                                    heros.push_back(new Player(imagePlayer.sprite, "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar), 40, 40));
+
+                                    it = heros.end();
+                                    it--;
+                                    (*it)->setArmor(3);
+
                                     sprintf(money, "%i", coins);
                                 }
                             }
                             else if ( (((pos.x - (ambar.getX(indexAmbar) + 48))*(pos.x  - (ambar.getX(indexAmbar) + 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
                             {//мб сместить на пиксель вверх
-                                if (coins >= 1000)
+                                if (coins >= 1000 && heros.size() < MAX_COUNT_HEROS - 1)
                                 {
                                     coins -= 1000;
-                                    heros.push_back(new Player(imagePlayer.sprite, "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar), 40, 40)); // место где будут размещаться новые войска при создании
+                                    heros.push_back(new Player(imagePlayer.sprite, "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar), 40, 40));
                                     heros.push_back(new Player(imagePlayer.sprite, "Heros", heros.size(), ambar.getX(indexAmbar) + 150, ambar.getY(indexAmbar) + 40, 40, 40));
-                                    // можно добавить еще пару юнитов
                                     sprintf(money, "%i", coins);
                                 }
                             }
@@ -3078,9 +3245,16 @@ void game(RenderWindow & window)
                             indexTower = tower.checkPosition(pos.x, pos.y);
                             indexFountain = fountain.checkPosition(pos.x, pos.y);
                             indexAmbar = ambar.checkPosition(pos.x, pos.y);
+
+                            if(indexCave != -1 || indexBuilding != -1 ||
+                               indexHouse != -1 || indexTower != -1 ||
+                               indexFountain != -1 || indexAmbar != -1
+                            )
+                            {
+                                isHelpText = false;
+                            }
                         }
                     }
-
                 }
             }
         }
@@ -3127,6 +3301,8 @@ void game(RenderWindow & window)
         window.draw(lineBorder, 8, Lines);
 
         window.draw(castle.sprite);
+
+        if(isBuild == true) build(window);
 
         // Прорисовка обьектов
         cave.moveAndDraw(window, 41, pos.x, pos.y);
@@ -3178,7 +3354,8 @@ void game(RenderWindow & window)
                 selection2.sprite.setPosition(cave.getX(indexCave), cave.getY(indexCave));
                 window.draw(selection2.sprite);
 
-                if (coins < 1000)
+                if (cave.getCoinsByID(indexCave) >= 100) selectionNot.sprite.setColor(Color::Black);
+                if (coins < 1000 || cave.getCoinsByID(indexCave) >= 100)
                 {
                     selectionNot.x = cave.getX(indexCave);
                     selectionNot.y = cave.getY(indexCave) - 50;
@@ -3191,7 +3368,8 @@ void game(RenderWindow & window)
                 selection2.sprite.setPosition(building.getX(indexBuilding), building.getY(indexBuilding));
                 window.draw(selection2.sprite);
 
-                if (coins < 2000)
+                if (building.getCoinsByID(indexBuilding) >= 500) selectionNot.sprite.setColor(Color::Black);
+                if (coins < 2000 || building.getCoinsByID(indexBuilding) >= 500)
                 {
                     selectionNot.x = building.getX(indexBuilding);
                     selectionNot.y = building.getY(indexBuilding) - 50;
@@ -3210,7 +3388,11 @@ void game(RenderWindow & window)
                     selectionNot.y = house.getY(indexHouse) - 50;
                     selectionNot.sprite.setPosition(selectionNot.x, selectionNot.y);
                     window.draw(selectionNot.sprite);
+                }
 
+                if (house.getDeltaArmor(indexHouse) >= 3) selectionNotAddition.sprite.setColor(Color::Black);
+                if (coins < 2500 || house.getDeltaArmor(indexHouse) >= 3)
+                {
                     selectionNotAddition.x = house.getX(indexHouse) + 48;
                     selectionNotAddition.y = house.getY(indexHouse) - 50;
                     selectionNotAddition.sprite.setPosition(selectionNotAddition.x, selectionNotAddition.y);
@@ -3222,7 +3404,18 @@ void game(RenderWindow & window)
                 selection2.sprite.setPosition(fountain.getX(indexFountain), fountain.getY(indexFountain));
                 window.draw(selection2.sprite);
 
-                if (coins < 2000)
+                // Отрисовка радиуса лечения
+                CircleShape shape(fountain.getRadius(indexFountain));
+                shape.setFillColor(Color::Transparent);
+                shape.setOutlineThickness(2);
+                shape.setOutlineColor(Color(255, 255, 255, 80));
+
+                shape.setOrigin(fountain.getRadius(indexFountain), fountain.getRadius(indexFountain));
+                shape.setPosition(fountain.getX(indexFountain), fountain.getY(indexFountain));
+                window.draw(shape);
+
+                if (fountain.getRadius(indexFountain) >= 200) selectionNot.sprite.setColor(Color::Black);
+                if (coins < 2000 || fountain.getRadius(indexFountain) >= 200)
                 {
                     selectionNot.x = fountain.getX(indexFountain);
                     selectionNot.y = fountain.getY(indexFountain) - 50;
@@ -3235,7 +3428,18 @@ void game(RenderWindow & window)
                 selection2.sprite.setPosition(tower.getX(indexTower), tower.getY(indexTower));
                 window.draw(selection2.sprite);
 
-                if (coins < 2000) //if (coins < 2000 || tower.getRadiusTower(indexTower) == 250)
+                // Отрисовка радиуса обстрела
+                CircleShape shape(tower.getRadius(indexTower));
+                shape.setFillColor(Color::Transparent);
+                shape.setOutlineThickness(2);
+                shape.setOutlineColor(Color(255, 255, 255, 80));
+
+                shape.setOrigin(tower.getRadius(indexTower), tower.getRadius(indexTower));
+                shape.setPosition(tower.getX(indexTower), tower.getY(indexTower));
+                window.draw(shape);
+
+                if (tower.getRadius(indexTower) >= 200) selectionNot.sprite.setColor(Color::Black);
+                if (coins < 2000 || tower.getRadius(indexTower) >= 200)
                 {
                     selectionNot.x = tower.getX(indexTower);
                     selectionNot.y = tower.getY(indexTower) - 50;
@@ -3248,7 +3452,8 @@ void game(RenderWindow & window)
                 selection3Ambar.sprite.setPosition(ambar.getX(indexAmbar), ambar.getY(indexAmbar));
                 window.draw(selection3Ambar.sprite);
 
-                if (coins < 2500)
+                if (heros.size() >= MAX_COUNT_HEROS) selectionNot.sprite.setColor(Color::Black);
+                if (coins < 2500 || heros.size() >= MAX_COUNT_HEROS)
                 {
                     selectionNot.x = ambar.getX(indexAmbar) - 48;
                     selectionNot.y = ambar.getY(indexAmbar) - 50;
@@ -3256,7 +3461,8 @@ void game(RenderWindow & window)
                     window.draw(selectionNot.sprite);
                 }
 
-                if (coins < 1000)
+                if (heros.size() >= MAX_COUNT_HEROS - 1) selectionNotAddition.sprite.setColor(Color::Black);
+                if (coins < 1000 || heros.size() >= MAX_COUNT_HEROS - 1)
                 {
                     selectionNotAddition.x = ambar.getX(indexAmbar) + 48;
                     selectionNotAddition.y = ambar.getY(indexAmbar) - 50;
@@ -3351,6 +3557,127 @@ void game(RenderWindow & window)
         text.setPosition(posWindow.x + 53, posWindow.y + 721);
         window.draw(text);
 
+        // Вывод подсказок
+        if(isHelp == true)
+        {
+            help = "";
+
+            if (indexCave != -1)
+            {
+                if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) - 50))*(pos.y - (cave.getY(indexCave) - 50)))) <= 950 )
+                {
+                    help = "Улучшить характеристики (-1000$)";
+                }
+                else if ( (((pos.x - cave.getX(indexCave))*(pos.x  - cave.getX(indexCave))) + ((pos.y - (cave.getY(indexCave) + 50))*(pos.y - (cave.getY(indexCave) + 50)))) <= 950 )
+                {
+                    help = "Удалить";
+                }
+            }
+            else if (indexBuilding != -1)
+            {
+                if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) - 50))*(pos.y - (building.getY(indexBuilding) - 50)))) <= 950 )
+                {
+                    help = "Улучшить характеристики (-2000$)";
+                }
+                else if ( (((pos.x - building.getX(indexBuilding))*(pos.x  - building.getX(indexBuilding))) + ((pos.y - (building.getY(indexBuilding) + 50))*(pos.y - (building.getY(indexBuilding) + 50)))) <= 950 )
+                {
+                    help = "Удалить";
+                }
+            }
+            else if (indexHouse != -1)
+            {
+                if ( (((pos.x - (house.getX(indexHouse) - 48))*(pos.x  - (house.getX(indexHouse) - 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                {
+                    help = "Улучшить способности персонажа (-1500$)";
+                }
+                else if ( (((pos.x - (house.getX(indexHouse) + 48))*(pos.x  - (house.getX(indexHouse) + 48))) + ((pos.y - (house.getY(indexHouse) - 50))*(pos.y - (house.getY(indexHouse) - 50)))) <= 950 )
+                {
+                    help = "Улучшить характеристики (-2500$)";
+                }
+                else if ( (((pos.x - house.getX(indexHouse))*(pos.x  - house.getX(indexHouse))) + ((pos.y - (house.getY(indexHouse) + 50))*(pos.y - (house.getY(indexHouse) + 50)))) <= 950 )
+                {
+                    help = "Удалить";
+                }
+            }
+            else if (indexFountain != -1)
+            {
+                if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) - 50))*(pos.y - (fountain.getY(indexFountain) - 50)))) <= 950 )
+                {
+                    help = "Улучшить характеристики (-2000$)";
+                }
+                else if ( (((pos.x - fountain.getX(indexFountain))*(pos.x  - fountain.getX(indexFountain))) + ((pos.y - (fountain.getY(indexFountain) + 50))*(pos.y - (fountain.getY(indexFountain) + 50)))) <= 950 )
+                {
+                    help = "Удалить";
+                }
+            }
+            else if (indexTower != -1)
+            {
+                if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) - 50))*(pos.y - (tower.getY(indexTower) - 50)))) <= 950 )
+                {
+                    help = "Улучшить характеристики (-2000$)";
+                }
+                else if ( (((pos.x - tower.getX(indexTower))*(pos.x  - tower.getX(indexTower))) + ((pos.y - (tower.getY(indexTower) + 50))*(pos.y - (tower.getY(indexTower) + 50)))) <= 950 )
+                {
+                    help = "Удалить";
+                }
+            }
+            else if (indexAmbar != -1)
+            {
+                if ( (((pos.x - (ambar.getX(indexAmbar) - 48))*(pos.x  - (ambar.getX(indexAmbar) - 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                {
+                    help = "Призвать героя (-2500$)";
+                }
+                else if ( (((pos.x - (ambar.getX(indexAmbar) + 48))*(pos.x  - (ambar.getX(indexAmbar) + 48))) + ((pos.y - (ambar.getY(indexAmbar) - 50))*(pos.y - (ambar.getY(indexAmbar) - 50)))) <= 950 )
+                {
+                    help = "Призвать армию (-1000$)";
+                }
+                else if ( (((pos.x - ambar.getX(indexAmbar))*(pos.x  - ambar.getX(indexAmbar))) + ((pos.y - (ambar.getY(indexAmbar) + 50))*(pos.y - (ambar.getY(indexAmbar) + 50)))) <= 950 )
+                {
+                    help = "Удалить";
+                }
+            }
+
+            if (isBuild == true)
+            {
+                help = "Для размещения нажмите правую кнопку мыши";
+            }
+            else if (pressed_selection == true)
+            {
+                if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 ) help = "Добывает ресурсы в размере 25 одиниц (-50$). Для выбора нажмите левую кнопку мыши";
+                else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 266)*(pos.y - 266))) <= 1225 ) help = "Добывает ресурсы в размере 50 одиниц (-250$). Для выбора нажмите левую кнопку мыши";
+                else if ( (((pos.x - 819)*(pos.x - 819)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 ) help = "Улучшает способности персонажа (-250$). Для выбора нажмите левую кнопку мыши";
+                else if ( (((pos.x - 747)*(pos.x - 747)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 ) help = "Повышает здоровье персонажа на определённом расстоянии (-1000$). Для выбора нажмите левую кнопку мыши";
+                else if ( (((pos.x - 603)*(pos.x - 603)) + ((pos.y - 504)*(pos.y - 504))) <= 1225 ) help = "Наносит урон врагу на определённом расстоянии (-1000$). Для выбора нажмите левую кнопку мыши";
+                else if ( (((pos.x - 531)*(pos.x - 531)) + ((pos.y - 384)*(pos.y - 384))) <= 1225 ) help = "Создает персонажей (-450$). Для выбора нажмите левую кнопку мыши";
+            }
+            else if (pressed_selection == false)
+            {
+                if ( (((pos.x - 683)*(pos.x - 683)) + ((pos.y - 410)*(pos.y - 410))) <= 11025 )
+                {
+                    help = "Для выбора нажмите левую кнопку мыши";
+                }
+                else if (isHelpText == true)
+                {
+                    if (cave.checkPosition(pos.x, pos.y) != -1) help = "Для выбора нажмите левую кнопку мыши";
+                    else if (building.checkPosition(pos.x, pos.y) != -1) help = "Для выбора нажмите левую кнопку мыши";
+                    else if (house.checkPosition(pos.x, pos.y) != -1) help = "Для выбора нажмите левую кнопку мыши";
+                    else if (tower.checkPosition(pos.x, pos.y) != -1) help = "Для выбора нажмите левую кнопку мыши";
+                    else if (fountain.checkPosition(pos.x, pos.y) != -1) help = "Для выбора нажмите левую кнопку мыши";
+                    else if (ambar.checkPosition(pos.x, pos.y) != -1) help = "Для выбора нажмите левую кнопку мыши";
+                }
+            }
+
+            helpText.setColor(Color::White);
+            helpText.setString(help);
+            helpText.setPosition(posWindow.x + 1300 - help.size() * 9, posWindow.y + 10); // зависит от длины текста
+
+            rect.setPosition(posWindow.x + 1280 - help.size() * 9, posWindow.y);
+            rect.setSize(Vector2f(1000, 55));
+
+            if (help.size() != 0) window.draw(rect);
+            window.draw(helpText);
+        }
+
         // Разметки на мини-карте
         Vertex lineMiniMap[] =
         {
@@ -3382,7 +3709,7 @@ int main()
     RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
     window.setFramerateLimit(50);
 
-    menu(window);
+    game(window);
 
     window.close();
     return 0;
