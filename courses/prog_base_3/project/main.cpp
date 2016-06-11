@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 //#include <Windows.h>
 #include <iostream>
 #include <fstream>
@@ -1471,6 +1472,16 @@ public:
             window.draw(sprite);
         }
     }
+
+    int getX()
+    {
+        return x;
+    }
+
+    int getY()
+    {
+        return y;
+    }
 };
 
 // обновить класс игрока:
@@ -1496,20 +1507,38 @@ public:
 // увеличить радиус фонтана
 // »зменить радиус основного круга вражеских обьектов !!!
 
-/////////////////BUILDING////////////////////
+///////////////// GAME ////////////////////
+
+class Options
+{
+public:
+    int checkOffHelp = 0;
+    int checkOffMusic = 0;
+    int numMusic = 0;
+    string fileNameMusic = "";
+};
 
 void menu(RenderWindow & window);
-void game(RenderWindow & window);
-void settings(RenderWindow & window);
-void rules(RenderWindow & window);
+void game(RenderWindow & window, Options & options);
+void settings(RenderWindow & window, Options & options);
+
 
 void menu(RenderWindow & window)
 {
-    Images Background("Images/Background.png");
-    Images NewGame("Images/NewGame.png");
-    Images LoadGame("Images/LoadGame.png");
-    Images SettingsGame("Images/SettingsGame.png");
-    Images QuitGame("Images/QuitGame.png");
+    Images Background("Images/Menu/MenuBackground.png");
+
+    Font font;
+    font.loadFromFile("Tahoma.ttf");
+
+    Text textNewGame("New game", font, 50);
+    Text textSettings("Settings", font, 50);
+    Text textQuitGame("Quit game", font, 50);
+
+    textNewGame.setStyle(Text::Bold);
+    textSettings.setStyle(Text::Bold);
+    textQuitGame.setStyle(Text::Bold);
+
+    Options options;
 
     bool isMenu = true;
     int menuNum = 0;
@@ -1522,122 +1551,187 @@ void menu(RenderWindow & window)
         Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == Event::Closed)
-            {
-                window.close();
-            }
-
             if (event.type == Event::MouseButtonPressed)
             {
                 if (event.key.code == Mouse::Left)
                 {
-                    if (menuNum == 1)
+                    if (menuNum == 1) game(window, options);
+                    else if (menuNum == 2) settings(window, options);
+                    else if (menuNum == 3) isMenu = false;
+                }
+            }
+        }
+
+        menuNum = 0;
+
+        Background.sprite.setPosition(posWindow.x, posWindow.y);
+        window.draw(Background.sprite);
+
+        textNewGame.setPosition(posWindow.x + 230, posWindow.y + 250);
+        textSettings.setPosition(posWindow.x + 260, posWindow.y + 355);
+        textQuitGame.setPosition(posWindow.x + 230, posWindow.y + 455);
+
+        textNewGame.setColor(Color(116, 105, 150));
+        textSettings.setColor(Color(116, 105, 150));
+        textQuitGame.setColor(Color(116, 105, 150));
+
+        if (IntRect(215, 245, 270, 82).contains(Mouse::getPosition(window)))
+        {
+            textNewGame.setColor(Color(85, 60, 170));
+            menuNum = 1;
+        }
+        else if (IntRect(215, 345, 270, 92).contains(Mouse::getPosition(window)))
+        {
+            textSettings.setColor(Color(85, 60, 170));
+            menuNum = 2;
+        }
+        else if (IntRect(215, 450, 270, 85).contains(Mouse::getPosition(window)))
+        {
+            textQuitGame.setColor(Color(85, 60, 170));
+            menuNum = 3;
+        }
+
+        window.draw(textNewGame);
+        window.draw(textSettings);
+        window.draw(textQuitGame);
+
+        window.display();
+    }
+}
+
+void settings(RenderWindow & window, Options & options)
+{
+    Images Background("Images/Settings/SettingsBackground.png");
+
+    Images offHelp("Images/Settings/off.png", 797, 188);
+    Images offMusic("Images/Settings/off.png", 797, 303);
+
+    Font font;
+    font.loadFromFile("Tahoma.ttf");
+
+    Text textM1("Default", font, 25);
+    Text textM2("Image Dragons - Radioactiv", font, 25);
+    Text textM3("Mattafix - Big City Life", font, 25);
+    Text textM4("Nirvana - Smells Like Teen Spirit", font, 25);
+    Text textM5("Red Hot Chili Peppers - Cant Stop", font, 25);
+    Text textM6("Red Hot Chili Peppers - Snow Hey Oh", font, 25);
+
+    textM1.setStyle(Text::Bold);
+    textM2.setStyle(Text::Bold);
+    textM3.setStyle(Text::Bold);
+    textM4.setStyle(Text::Bold);
+    textM5.setStyle(Text::Bold);
+    textM6.setStyle(Text::Bold);
+
+    while (!Keyboard::isKeyPressed(Keyboard::Escape))
+    {
+        Vector2i pixelPos = Mouse::getPosition(window);
+        Vector2f pos = window.mapPixelToCoords(pixelPos);
+
+        Vector2i pixelPosWindow = window.getPosition();
+        Vector2f posWindow = window.mapPixelToCoords(pixelPosWindow);
+
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::MouseButtonPressed)
+            {
+                if (event.key.code == Mouse::Left)
+                {
+                    if (offHelp.sprite.getGlobalBounds().contains(pos.x, pos.y))
                     {
-                        game(window);
+                        options.checkOffHelp++;
+                        options.checkOffHelp %= 2;
                     }
-                    else if (menuNum == 2)
+                    else if (offMusic.sprite.getGlobalBounds().contains(pos.x, pos.y))
                     {
-                        //to do
-                        //rules(window);
+                        options.checkOffMusic++;
+                        options.checkOffMusic %= 2;
                     }
-                    else if (menuNum == 3)
+                    else if (textM1.getGlobalBounds().contains(pos.x, pos.y))
                     {
-                        //to do
-                        //settings(window);
+                        options.numMusic = 1;
+                        options.fileNameMusic = "Music/StepUp.ogg";
                     }
-                    else if (menuNum == 4)
+                    else if (textM2.getGlobalBounds().contains(pos.x, pos.y))
                     {
-                        isMenu = false;
+                        options.numMusic = 2;
+                        options.fileNameMusic = "Music/ImageDragons-Radioactiv.ogg";
+                    }
+                    else if (textM3.getGlobalBounds().contains(pos.x, pos.y))
+                    {
+                        options.numMusic = 3;
+                        options.fileNameMusic = "Music/Mattafix-BigCityLife.ogg";
+                    }
+                    else if (textM4.getGlobalBounds().contains(pos.x, pos.y))
+                    {
+                        options.numMusic = 4;
+                        options.fileNameMusic = "Music/Nirvana-SmellsLikeTeenSpirit.ogg";
+                    }
+                    else if (textM5.getGlobalBounds().contains(pos.x, pos.y))
+                    {
+                        options.numMusic = 5;
+                        options.fileNameMusic = "Music/RedHotChiliPeppers-CantStop.ogg";
+                    }
+                    else if (textM6.getGlobalBounds().contains(pos.x, pos.y))
+                    {
+                        options.numMusic = 6;
+                        options.fileNameMusic = "Music/RedHotChiliPeppers-SnowHeyOh.ogg";
                     }
                 }
             }
         }
 
-        NewGame.sprite.setColor(Color::White);
-        LoadGame.sprite.setColor(Color::White);
-        SettingsGame.sprite.setColor(Color::White);
-        QuitGame.sprite.setColor(Color::White);
-
-        menuNum = 0;
-
-        if (IntRect(222, 252, 245, 78).contains(Mouse::getPosition(window)))
-        {
-            NewGame.sprite.setColor(Color(230, 100, 200));
-            menuNum = 1;
-        }
-        else if (IntRect(222, 340, 245, 78).contains(Mouse::getPosition(window)))
-        {
-            LoadGame.sprite.setColor(Color(230, 100, 200));
-            menuNum = 2;
-        }
-        else if (IntRect(222, 428, 245, 78).contains(Mouse::getPosition(window)))
-        {
-            SettingsGame.sprite.setColor(Color(230, 100, 200));
-            menuNum = 3;
-        }
-        else if (IntRect(222, 516, 245, 78).contains(Mouse::getPosition(window)))
-        {
-            QuitGame.sprite.setColor(Color(230, 100, 200));
-            menuNum = 4;
-        }
-
-        window.clear();
-
         Background.sprite.setPosition(posWindow.x, posWindow.y);
-        NewGame.sprite.setPosition(posWindow.x, posWindow.y);
-        LoadGame.sprite.setPosition(posWindow.x, posWindow.y);
-        SettingsGame.sprite.setPosition(posWindow.x, posWindow.y);
-        QuitGame.sprite.setPosition(posWindow.x, posWindow.y);
-
         window.draw(Background.sprite);
-        window.draw(NewGame.sprite);
-        window.draw(LoadGame.sprite);
-        window.draw(SettingsGame.sprite);
-        window.draw(QuitGame.sprite);
 
-        window.display();
-    }
-}
+        offHelp.sprite.setPosition(posWindow.x + 797, posWindow.y + 188);
+        offMusic.sprite.setPosition(posWindow.x + 797, posWindow.y + 303);
 
-void settings(RenderWindow & window)
-{
-    Images Settings("Images/Settings.png");
-    Images SettingsBackground("Images/SettingsBackground.png");
-
-    while (!Keyboard::isKeyPressed(Keyboard::Escape))
-    {
-        Event event;
-        while (window.pollEvent(event))
+        if (options.checkOffHelp == 1)
         {
-            if (event.type == Event::Closed)
-                window.close();
+            window.draw(offHelp.sprite);
+        }
+        if (options.checkOffMusic == 1)
+        {
+             window.draw(offMusic.sprite);
+             options.numMusic = 0;
+             options.fileNameMusic = "";
         }
 
-        window.draw(SettingsBackground.sprite);
-        window.draw(Settings.sprite);
+        textM1.setPosition(posWindow.x + 635, posWindow.y + 360);
+        textM2.setPosition(posWindow.x + 510, posWindow.y + 400);
+        textM3.setPosition(posWindow.x + 540, posWindow.y + 435);
+        textM4.setPosition(posWindow.x + 480, posWindow.y + 470);
+        textM5.setPosition(posWindow.x + 470, posWindow.y + 505);
+        textM6.setPosition(posWindow.x + 450, posWindow.y + 540);
+
+        textM1.setColor(Color::White);
+        textM2.setColor(Color::White);
+        textM3.setColor(Color::White);
+        textM4.setColor(Color::White);
+        textM5.setColor(Color::White);
+        textM6.setColor(Color::White);
+
+        if (options.numMusic == 1) textM1.setColor(Color(230, 100, 200));
+        else if (options.numMusic == 2) textM2.setColor(Color(230, 100, 200));
+        else if (options.numMusic == 3) textM3.setColor(Color(230, 100, 200));
+        else if (options.numMusic == 4) textM4.setColor(Color(230, 100, 200));
+        else if (options.numMusic == 5) textM5.setColor(Color(230, 100, 200));
+        else if (options.numMusic == 6) textM6.setColor(Color(230, 100, 200));
+
+        window.draw(textM1);
+        window.draw(textM2);
+        window.draw(textM3);
+        window.draw(textM4);
+        window.draw(textM5);
+        window.draw(textM6);
+
         window.display();
     }
 }
 
-void rules(RenderWindow & window)
-{
-    Images Settings("Images/Settings.png");
-    Images SettingsBackground("Images/SettingsBackground.png");
 
-    while (!Keyboard::isKeyPressed(Keyboard::Escape))
-    {
-        Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == Event::Closed)
-                window.close();
-        }
-
-        window.draw(SettingsBackground.sprite);
-        window.draw(Settings.sprite);
-        window.display();
-    }
-}
 
 class ImagesBuild
 {
@@ -1659,6 +1753,9 @@ public:             // private
     bool isMove = false;
     bool isCreate = false;
     bool isLive = false;
+    int life;
+
+    Images * scaleUpdate;
 
     int coins = 0;
     int startCoins = 0;
@@ -1668,6 +1765,7 @@ public:             // private
     ImagesBuild(String file, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
     {
         //File = file;
+        scaleUpdate = new Images("Images/scaleBuilding.png", 0, 0, 112, 140);
         image.loadFromFile(file);
         texture.loadFromImage(image);
         sprite.setTexture(texture);
@@ -1681,6 +1779,7 @@ public:             // private
         isLive = false;
         this->coins = coins;
         sprite.setOrigin(Vector2f(w/2, h/2));
+        life = 10;
     }
 
     ImagesBuild(Sprite & spr, int positionX = 0, int positionY = 0, int width = 0, int height = 0, int coins = 0)
@@ -1688,6 +1787,7 @@ public:             // private
         //File = file;
         //image.loadFromFile(file);
         //texture.loadFromImage(image);
+        scaleUpdate = new Images("Images/scaleBuilding.png", 0, 0, 112, 140);
         sprite = spr;
         sprite.setPosition(positionX, positionY);
         sprite.setOrigin(Vector2f(width/2, height/2));
@@ -1701,6 +1801,7 @@ public:             // private
         this->coins = coins;
         this->startCoins = coins;
         deltaArmor = 1;
+        life = 10;
     }
 
     void setPosition(int Radius, int posX, int posY)
@@ -1762,6 +1863,33 @@ public:
     }
 
 
+    void changeLife(int i)
+    {
+        building[i]->life--;
+        if(building[i]->life == 0)
+        {
+            building[i]->isLive = false;
+            deleteBuildingIndex(i);
+        }
+    }
+
+    void checkLife(int posX, int posY)
+    {
+        for(int i = 0; i < index + 1; i++)
+        {
+            char * sqlQuery = "SELECT * FROM Map WHERE Name = ? AND ID = ?;";
+            db->getData(sqlQuery, Name, i);
+
+            if(pow(posX - db->x, 2) + pow(posY - db->y, 2) <= pow(db->R + 20 + 30, 2))
+            {
+                changeLife(i);
+                //break; // ?
+            }
+        }
+    }
+
+
+
     int checkPosition(int posX, int posY)
     {
         for(int i = 0; i < index + 1; i++) // раньше было до maxCount, при удалени обьекта оставалс€ выбор его улучшений
@@ -1808,46 +1936,7 @@ public:
         char * sqlQuery = "DELETE FROM Map WHERE Name = ? AND ID = ?;";
         db->deleteData(sqlQuery, Name, indexBuilding); // change
 
-        /*int RM, xM, yM;
-
-        const int len = 50, strings = 50;
-        int countStr = 0;
-        int delIndex = 0;
-        char buffer[len][strings];
-
-        ifstream fs("map.txt", ios::in | ios::binary);
-        while (fs.getline(buffer[countStr], 50))
-        {
-            char * pointR = strstr(buffer[countStr], "R = ");
-            pointR += 4;
-            RM = atoi(pointR);
-
-            char * pointX = strstr(buffer[countStr], "x = ");
-            pointX += 4;
-            xM = atoi(pointX);
-
-            char * pointY = strstr(buffer[countStr], "y = ");
-            pointY += 4;
-            yM = atoi(pointY);
-
-            if(building[indexBuilding]->R == RM && building[indexBuilding]->x == xM && building[indexBuilding]->y == yM)
-            {
-                delIndex = countStr;
-            }
-            countStr++;
-        }
-        fs.close();
-
-        fileMapCleaning();
-
-        ofstream fout("map.txt", std::ios_base::app);
-        for(int k = 0; k < countStr; k++)
-        {
-            if(k != delIndex) fout << buffer[k] << "\n";
-        }
-        fout.close();*/
-
-        int x, y, w, h, R, coins, deltaArmor;
+        int x, y, w, h, R, coins, deltaArmor, life;
         bool isMove, isCreate, isLive;
 
         Image image;
@@ -1858,6 +1947,7 @@ public:
 
         // значени€ которые измен€ютс€ в течение игры
         building[indexBuilding]->deltaArmor = 1;
+        building[indexBuilding]->life = 10;
         building[indexBuilding]->coins = building[indexBuilding]->startCoins;
 
         for(int i = indexBuilding; i < index; i++)
@@ -1870,6 +1960,7 @@ public:
             R = building[i + 1]->R;
             coins = building[i + 1]->coins;
             deltaArmor = building[i + 1]->deltaArmor;
+            life = building[i + 1]->life;
 
             image = building[i + 1]->image;
             texture = building[i + 1]->texture;
@@ -1887,6 +1978,7 @@ public:
             building[i]->R = R;
             building[i]->coins = coins;
             building[i]->deltaArmor = deltaArmor;
+            building[i]->life = life;
 
             building[i]->image = image;
             building[i]->texture = texture;
@@ -2029,7 +2121,26 @@ public:
                     }
                     fin.close();*/
                 }
+
                 window.draw(building[i]->sprite);
+            }
+        }
+    }
+
+    void drawScale(RenderWindow & window)
+    {
+        for(int i = 0; i < index + 1; i++)
+        {
+            if (building[i]->isMove == false)
+            {
+                int R = 0;
+                if(strcmp(Name, "Cave") == 0) R = -10;
+                else if(strcmp(Name, "House") == 0) R = 10;
+                else if(strcmp(Name, "Ambar") == 0) R = 20;
+
+                building[i]->scaleUpdate->sprite.setPosition(building[i]->x, building[i]->y - R);
+                building[i]->scaleUpdate->sprite.setTextureRect(IntRect(0, 14 * (10 - building[i]->life), 112, 14));
+                window.draw(building[i]->scaleUpdate->sprite);
             }
         }
     }
@@ -2124,6 +2235,32 @@ public:
     }
 
 
+    void changeLife(int i)
+    {
+        building[i]->life--;
+        if(building[i]->life == 0)
+        {
+            building[i]->isLive = false;
+            deleteBuildingIndex(i);
+        }
+    }
+
+    void checkLife(int posX, int posY)
+    {
+        for(int i = 0; i < index + 1; i++)
+        {
+            char * sqlQuery = "SELECT * FROM Map WHERE Name = ? AND ID = ?;";
+            db->getData(sqlQuery, Name, i);
+
+            if(pow(posX - db->x, 2) + pow(posY - db->y, 2) <= pow(db->R + 20 + 30, 2))
+            {
+                changeLife(i);
+                //break; // ?
+            }
+        }
+    }
+
+
     int getX(int i)
     {
         return building[i]->x;
@@ -2147,16 +2284,17 @@ public:
             building[index]->isLive = true;
             building[index]->isCreate = true;
             building[index]->sprite.setPosition(posX, posY);
+            building[index]->setPosition(Radius, posX, posY);
 
             char * sqlQuery = "INSERT INTO Map (Name, ID, R, x, y, Radius) VALUES (?, ?, ?, ?, ?, ?);";
 
             if(strcmp(Name, "EnemyTower") == 0)
             {
-                db->insertData(sqlQuery, Name, 0, Radius, posX, posY, 200);
+                db->insertData(sqlQuery, Name, index, Radius, posX, posY, 200);
             }
             else
             {
-                db->insertData(sqlQuery, Name, 0, Radius, posX, posY, 0);
+                db->insertData(sqlQuery, Name, index, Radius, posX, posY, 0);
             }
         }
     }
@@ -2166,7 +2304,7 @@ public:
         char * sqlQuery = "DELETE FROM Map WHERE Name = ? AND ID = ?;";
         db->deleteData(sqlQuery, Name, indexBuilding); // change
 
-        int x, y, w, h, R, coins;
+        int x, y, w, h, R, coins, deltaArmor, life;
         bool isMove, isCreate, isLive;
 
         Image image;
@@ -2174,6 +2312,10 @@ public:
         Sprite sprite;
 
         char * sqlQueryUp = "UPDATE Map SET ID = ? WHERE Name = ? AND ID = ?;";
+
+        // значени€ которые измен€ютс€ в течение игры
+        building[indexBuilding]->life = 10;
+        building[indexBuilding]->coins = building[indexBuilding]->startCoins;
 
         for(int i = indexBuilding; i < index; i++)
         {
@@ -2184,6 +2326,8 @@ public:
             h = building[i + 1]->h;
             R = building[i + 1]->R;
             coins = building[i + 1]->coins;
+            deltaArmor = building[i + 1]->deltaArmor;
+            life = building[i + 1]->life;
 
             image = building[i + 1]->image;
             texture = building[i + 1]->texture;
@@ -2200,6 +2344,8 @@ public:
             building[i]->h = h;
             building[i]->R = R;
             building[i]->coins = coins;
+            building[i]->deltaArmor = deltaArmor;
+            building[i]->life = life;
 
             building[i]->image = image;
             building[i]->texture = texture;
@@ -2269,8 +2415,15 @@ public:
 
     void draw(RenderWindow & window)
     {
-        for(int i = 0; i < maxCount; i++)
+        for(int i = 0; i < index + 1; i++)
         {
+            int R = 0;
+            if(strcmp(Name, "EnemyCastle") == 0) R = 60;
+
+            building[i]->scaleUpdate->sprite.setPosition(building[i]->x, building[i]->y - R);
+            building[i]->scaleUpdate->sprite.setTextureRect(IntRect(0, 14 * (10 - building[i]->life), 112, 14));
+            window.draw(building[i]->scaleUpdate->sprite);
+
             window.draw(building[i]->sprite);
         }
     }
@@ -2302,7 +2455,7 @@ void build(RenderWindow & window)
 }
 
 
-void game(RenderWindow & window)
+void game(RenderWindow & window, Options & options)
 {
     //saveMap(135, 683, 384); // R - можно изменить
     //fileMapCleaning();
@@ -2437,6 +2590,10 @@ void game(RenderWindow & window)
     RectangleShape rect;
     rect.setFillColor(Color::Black);
 
+    Music music;
+    music.openFromFile(options.fileNameMusic);
+    music.setLoop(true);
+    music.play();
 
     while (!Keyboard::isKeyPressed(Keyboard::Escape))
     {
@@ -2454,12 +2611,23 @@ void game(RenderWindow & window)
 
             for (itEnemy = enemy.begin(); itEnemy != enemy.end(); itEnemy++)
             {
+                cave.checkLife((*itEnemy)->getX(), (*itEnemy)->getY());
+                building.checkLife((*itEnemy)->getX(), (*itEnemy)->getY());
+                house.checkLife((*itEnemy)->getX(), (*itEnemy)->getY());
+                fountain.checkLife((*itEnemy)->getX(), (*itEnemy)->getY());
+                tower.checkLife((*itEnemy)->getX(), (*itEnemy)->getY());
+                ambar.checkLife((*itEnemy)->getX(), (*itEnemy)->getY());
+
                 (*itEnemy)->checkLife(0); // без входных параметров
                 if((*itEnemy)->getLife() == 0) enemy.remove(*itEnemy);
             }
 
             for (it = heros.begin(); it != heros.end(); it++)
             {
+                EnemyCastle.checkLife((*it)->getX(), (*it)->getY());
+                boiler.checkLife((*it)->getX(), (*it)->getY());
+                EnemyTower.checkLife((*it)->getX(), (*it)->getY());
+
                 (*it)->checkLife(0); // без входных параметров
                 if((*it)->getLife() == 0) heros.remove(*it);
             }
@@ -3312,6 +3480,13 @@ void game(RenderWindow & window)
         tower.moveAndDraw(window, 53, pos.x, pos.y);
         ambar.moveAndDraw(window, 220, pos.x, pos.y); // R = 84  увеличил что б р€дом размещать войска
 
+        cave.drawScale(window);
+        building.drawScale(window);
+        house.drawScale(window);
+        fountain.drawScale(window);
+        tower.drawScale(window);
+        ambar.drawScale(window);
+
         // ¬ражеские строени€
         EnemyCastle.draw(window);
         boiler.draw(window);
@@ -3709,7 +3884,7 @@ int main()
     RenderWindow window(VideoMode::getDesktopMode(), "Menu", Style::Fullscreen);
     window.setFramerateLimit(50);
 
-    game(window);
+    menu(window);
 
     window.close();
     return 0;
