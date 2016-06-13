@@ -399,16 +399,8 @@
 
 1461017912 source:d:\op\workspace_2\практика\sfml\done.cpp
 
-1465256876 source:d:\op\workspace_2\практика\sfml\main.cpp
-	<SFML/Graphics.hpp>
-	<Windows.h>
-	<iostream>
-	<fstream>
-	<cstring>
-	<cstdlib>
-	<cmath>
-	<list>
-	"sqlite3/sqlite3.h"
+1465817450 source:d:\op\workspace_2\практика\sfml\main.cpp
+	"All/Menu/Menu.hpp"
 
 1429784053 d:\op\sfml-2.3.2\include\\sfml\graphics.hpp
 	<SFML/Window.hpp>
@@ -870,4 +862,314 @@
 
 1465129468 d:\op\workspace_2\практика\sfml\db_manager.hpp
 	"sqlite3/sqlite3.h"
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\alresource.hpp
+	<SFML/Audio/Export.hpp>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\export.hpp
+	<SFML/Config.hpp>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio.hpp
+	<SFML/System.hpp>
+	<SFML/Audio/InputSoundFile.hpp>
+	<SFML/Audio/Listener.hpp>
+	<SFML/Audio/Music.hpp>
+	<SFML/Audio/OutputSoundFile.hpp>
+	<SFML/Audio/Sound.hpp>
+	<SFML/Audio/SoundBuffer.hpp>
+	<SFML/Audio/SoundBufferRecorder.hpp>
+	<SFML/Audio/SoundFileFactory.hpp>
+	<SFML/Audio/SoundFileReader.hpp>
+	<SFML/Audio/SoundFileWriter.hpp>
+	<SFML/Audio/SoundRecorder.hpp>
+	<SFML/Audio/SoundSource.hpp>
+	<SFML/Audio/SoundStream.hpp>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\inputsoundfile.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/System/NonCopyable.hpp>
+	<SFML/System/Time.hpp>
+	<string>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\listener.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/System/Vector3.hpp>
+
+1436037625 d:\op\sfml-2.3.2\include\\sfml\audio\music.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/SoundStream.hpp>
+	<SFML/Audio/InputSoundFile.hpp>
+	<SFML/System/Mutex.hpp>
+	<SFML/System/Time.hpp>
+	<string>
+	<vector>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundstream.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/SoundSource.hpp>
+	<SFML/System/Thread.hpp>
+	<SFML/System/Time.hpp>
+	<SFML/System/Mutex.hpp>
+	<cstdlib>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundsource.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/AlResource.hpp>
+	<SFML/System/Vector3.hpp>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\outputsoundfile.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/System/NonCopyable.hpp>
+	<string>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\sound.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/SoundSource.hpp>
+	<SFML/System/Time.hpp>
+	<cstdlib>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundbuffer.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/AlResource.hpp>
+	<SFML/System/Time.hpp>
+	<string>
+	<vector>
+	<set>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundbufferrecorder.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/SoundBuffer.hpp>
+	<SFML/Audio/SoundRecorder.hpp>
+	<vector>
+
+1436037625 d:\op\sfml-2.3.2\include\\sfml\audio\soundrecorder.hpp
+	<SFML/Audio/Export.hpp>
+	<SFML/Audio/AlResource.hpp>
+	<SFML/System/Thread.hpp>
+	<SFML/System/Time.hpp>
+	<vector>
+	<string>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundfilefactory.hpp
+	<SFML/Audio/Export.hpp>
+	<string>
+	<vector>
+	<SFML/Audio/SoundFileFactory.inl>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundfilefactory.inl
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundfilereader.hpp
+	<SFML/Audio/Export.hpp>
+	<string>
+
+1429784053 d:\op\sfml-2.3.2\include\\sfml\audio\soundfilewriter.hpp
+	<SFML/Audio/Export.hpp>
+	<string>
+
+1465737228 source:d:\op\workspace_2\практика\sfml\database\database.cpp
+	"Database.hpp"
+
+1465737228 d:\op\workspace_2\практика\sfml\database\database.hpp
+	<iostream>
+	<cstring>
+	"sqlite3/sqlite3.h"
+
+1464410060 d:\op\workspace_2\практика\sfml\database\sqlite3\sqlite3.h
+	<stdarg.h>
+
+1464410060 source:d:\op\workspace_2\практика\sfml\database\sqlite3\sqlite3.c
+	<vxWorks.h>
+	<pthread.h>
+	"mingw.h"
+	"_mingw.h"
+	<stdarg.h>
+	"config.h"
+	<stdint.h>
+	<inttypes.h>
+	<intrin.h>
+	<cmnintrin.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<stddef.h>
+	<TargetConditionals.h>
+	<ctype.h>
+	<time.h>
+	<sys/sysctl.h>
+	<malloc/malloc.h>
+	<libkern/OSAtomic.h>
+	<malloc.h>
+	<pthread.h>
+	"windows.h"
+	<sys/cygwin.h>
+	<errno.h>
+	<process.h>
+	<math.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<unistd.h>
+	<sys/time.h>
+	<errno.h>
+	<sys/mman.h>
+	<sys/ioctl.h>
+	<sys/file.h>
+	<sys/param.h>
+	<semaphore.h>
+	<limits.h>
+	<sys/mount.h>
+	<utime.h>
+	<sys/dcmd_blk.h>
+	<sys/statvfs.h>
+	<dlfcn.h>
+	<tcl.h>
+	"sqlite3rtree.h"
+	<unicode/utypes.h>
+	<unicode/uregex.h>
+	<unicode/ustring.h>
+	<unicode/ucol.h>
+	<unicode/ubrk.h>
+	<unicode/utf16.h>
+	<ctype.h>
+	<math.h>
+
+1465749902 source:d:\op\workspace_2\практика\sfml\units\player.cpp
+
+1465755590 source:d:\op\workspace_2\практика\sfml\all\images\images.cpp
+	"Images.hpp"
+
+1465812951 d:\op\workspace_2\практика\sfml\all\images\images.hpp
+	<SFML/Graphics.hpp>
+	<cmath>
+	"../Database/Database.hpp"
+	"../Other/Other.hpp"
+
+1465737228 source:d:\op\workspace_2\практика\sfml\all\database\database.cpp
+	"Database.hpp"
+
+1465737228 d:\op\workspace_2\практика\sfml\all\database\database.hpp
+	<iostream>
+	<cstring>
+	"sqlite3/sqlite3.h"
+
+1464410060 d:\op\workspace_2\практика\sfml\all\database\sqlite3\sqlite3.h
+	<stdarg.h>
+
+1464410060 source:d:\op\workspace_2\практика\sfml\all\database\sqlite3\sqlite3.c
+	<vxWorks.h>
+	<pthread.h>
+	"mingw.h"
+	"_mingw.h"
+	<stdarg.h>
+	"config.h"
+	<stdint.h>
+	<inttypes.h>
+	<intrin.h>
+	<cmnintrin.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<stddef.h>
+	<TargetConditionals.h>
+	<ctype.h>
+	<time.h>
+	<sys/sysctl.h>
+	<malloc/malloc.h>
+	<libkern/OSAtomic.h>
+	<malloc.h>
+	<pthread.h>
+	"windows.h"
+	<sys/cygwin.h>
+	<errno.h>
+	<process.h>
+	<math.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<fcntl.h>
+	<unistd.h>
+	<sys/time.h>
+	<errno.h>
+	<sys/mman.h>
+	<sys/ioctl.h>
+	<sys/file.h>
+	<sys/param.h>
+	<semaphore.h>
+	<limits.h>
+	<sys/mount.h>
+	<utime.h>
+	<sys/dcmd_blk.h>
+	<sys/statvfs.h>
+	<dlfcn.h>
+	<tcl.h>
+	"sqlite3rtree.h"
+	<unicode/utypes.h>
+	<unicode/uregex.h>
+	<unicode/ustring.h>
+	<unicode/ucol.h>
+	<unicode/ubrk.h>
+	<unicode/utf16.h>
+	<ctype.h>
+	<math.h>
+
+1465809039 source:d:\op\workspace_2\практика\sfml\all\units\enemy.cpp
+	"Enemy.hpp"
+
+1465812914 d:\op\workspace_2\практика\sfml\all\units\enemy.hpp
+	"Unit.hpp"
+
+1465812942 d:\op\workspace_2\практика\sfml\all\units\unit.hpp
+	"../Images/Images.hpp"
+
+1465808296 source:d:\op\workspace_2\практика\sfml\all\units\player.cpp
+	"Player.hpp"
+
+1465808008 source:d:\op\workspace_2\практика\sfml\all\units\unit.cpp
+	"Unit.hpp"
+
+1465765885 source:d:\op\workspace_2\практика\sfml\all\buildings\building.cpp
+
+1465812973 source:d:\op\workspace_2\практика\sfml\all\other\other.cpp
+	"Other.hpp"
+
+1465813008 d:\op\workspace_2\практика\sfml\all\other\other.hpp
+	<fstream>
+	<cstring>
+	<cstdlib>
+	<cmath>
+
+1465812914 d:\op\workspace_2\практика\sfml\all\units\player.hpp
+	"Unit.hpp"
+
+1465810881 source:d:\op\workspace_2\практика\sfml\all\buildings\imagesbuild.cpp
+	"ImagesBuild.hpp"
+
+1465812770 d:\op\workspace_2\практика\sfml\all\buildings\imagesbuild.hpp
+	"../Images/Images.hpp"
+	"../Database/Database.hpp"
+
+1465812795 source:d:\op\workspace_2\практика\sfml\all\buildings\buildingenemy.cpp
+	"BuildingEnemy.hpp"
+
+1465812736 d:\op\workspace_2\практика\sfml\all\buildings\buildingenemy.hpp
+	"ImagesBuild.hpp"
+
+1465812012 source:d:\op\workspace_2\практика\sfml\all\buildings\buildingplayer.cpp
+	"BuildingPlayer.hpp"
+
+1465812756 d:\op\workspace_2\практика\sfml\all\buildings\buildingplayer.hpp
+	"ImagesBuild.hpp"
+
+1465816279 source:d:\op\workspace_2\практика\sfml\all\menu\menu.cpp
+	"Menu.hpp"
+
+1465814488 d:\op\workspace_2\практика\sfml\all\menu\menu.hpp
+	<SFML/Graphics.hpp>
+	<SFML/Audio.hpp>
+	<list>
+	"../Units/Enemy.hpp"
+	"../Units/Player.hpp"
+	"../Buildings/BuildingEnemy.hpp"
+	"../Buildings/BuildingPlayer.hpp"
 
